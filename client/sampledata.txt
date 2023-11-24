@@ -1,0 +1,80 @@
+export const sampleMessages: Message[] = [
+    {
+        id: '1',
+        role: "user",
+        content: "Hello, how are you?",
+    },
+    {
+        id: '2',
+        role: "assistant",
+        content: "Hello! I'm just a machine, so I don't have feelings, but I'm functioning optimally. How can I assist you today?",
+        function_call: null,
+    },
+    {
+        id: '3',
+        role: "user",
+        content: "I'm enjoying my breakfast here in Denver. Can you list 3 fun things to do here, then give me a quick morning update with the information available?",
+    },
+    {
+        id: '4',
+        role: "assistant",
+        content: "Of course! Here are three fun activities to do in Denver:\n\n1. **Visit the Denver Botanic Gardens**: Enjoy a peaceful morning walking through the various plant collections and exhibits. It's a good way to appreciate nature and the diverse plant life.\n\n2. **Explore the Denver Art Museum**: With its wide range of art from across the world, including contemporary, indigenous, and classic pieces, this museum offers a rich cultural experience.\n\n3. **Take a Stroll Around Larimer Square**: This historic district is perfect for a leisurely walk, as you can explore boutique shops, enjoy local eateries, and take in the unique architecture and vibrant atmosphere.\n\nNow, let's get you that morning update for Denver:\n\nI can provide you with the current weather, the current date and time, and check on the stock price of a company if you're following any in particular. Let's start with the weather and the date and time:\n\n- **Weather**: I'll check the current weather conditions for you.\n- **Current Date and Time**: I\u2019ll provide you with the current date and time in Denver.\n\nLet me fetch the latest information for you, just a moment.",
+        function_call: {
+            arguments: "{\"city\":\"Denver\"}",
+            name: "get_weather",
+        },
+    },
+    {
+        id: '5',
+        role: "function",
+        name: "get_weather",
+        content: "Error: Sunny and 75 degrees",
+    },
+    {
+        id: '6',
+        role: "assistant",
+        content: null,
+        function_call: {
+            arguments: "{\"city\":\"Denver\"}",
+            name: "get_current_datetime",
+        },
+    },
+    {
+        id: '7',
+        role: "function",
+        name: "get_current_datetime",
+        content: "Friday, Nov. 10, 2023, 10:00 AM",
+    },
+    {
+        id: '8',
+        role: "assistant",
+        content: "Here's your morning update for Denver:\n\n- **Weather:** It's currently sunny and 75 degrees in Denver. It seems like a beautiful day to enjoy any of the outdoor activities I mentioned!\n- **Current Date and Time:** It's Friday, November 10, 2023, and the time is 10:00 AM.\n\nIf there's a particular stock you'd like to check on, just let me know the ticker symbol, and I'll get the latest price for you. Have a fantastic day enjoying Denver!",
+        function_call: null,
+    },
+]
+
+const messagePlan: PlanMessage[] = [
+    {
+        type: 'user',
+        id: '1',
+    },
+    {
+        type: 'assistant',
+        parts: [
+            { type: 'content', id: '2' },
+        ],
+    },
+    {
+        type: 'user',
+        id: '3',
+    },
+    {
+        type: 'assistant',
+        parts: [
+            { type: 'content', id: '4' },
+            { type: 'function', callId: '4', resultId: '5' },
+            { type: 'function', callId: '6', resultId: '7' },
+            { type: 'content', id: '8' },
+        ]
+    },
+]

@@ -1,0 +1,7 @@
+dist
+.python-version
+.DS_Store
+private
+node_modules
+.svelte-kit
+__pycache__
