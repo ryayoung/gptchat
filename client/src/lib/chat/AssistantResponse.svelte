@@ -41,50 +41,20 @@ function forceGetFunctionCall(messages: RecordOf<Message>, callId: string): Func
     return message.function_call;
 }
 
-type PartDisplay = {
-    type: 'content',
-    markup: string,
-} | {
-    type: 'function'
-    inProgress: boolean,
-    functionCall: FunctionCall,
-    result: string | null,
-}
-
-let partDisplays: PartDisplay[] = [];
-
-$: {
-    partDisplays = parts.map((part, partIndex) => {
-        if (part.type === 'content') {
-            return {
-                type: 'content',
-                markup: toMarkdown($messages[part.id]?.content ?? ''),
-            };
-        } else {
-            return {
-                type: 'function',
-                inProgress: functionCallIsInProgress($generating, $plan.length, planIndex, partIndex, part.resultId),
-                functionCall: forceGetFunctionCall($messages, part.callId),
-                result: part.resultId ? $messages[part.resultId]?.content ?? '' : null,
-            };
-        }
-    });
-}
-
 </script>
 
 <div class="sections-container">
     <div class="content-container">
-        {#each partDisplays as part}
-            {#if part.type === 'content'}
+        {#each parts as part, partIndex}
+            {#if part.type === 'content' && part.id in $messages}
                 <div class="markdown-body selectable-text-deep">
-                    {@html part.markup}
+                    {@html toMarkdown($messages[part.id]?.content ?? '')}
                 </div>
-            {:else}
+            {:else if part.type === 'function' && part.callId in $messages}
                 <FunctionCallNodes
-                    inProgress={part.inProgress}
-                    functionCall={part.functionCall}
-                    result={part.result}
+                    inProgress={functionCallIsInProgress($generating, $plan.length, planIndex, partIndex, part.resultId)}
+                    functionCall={forceGetFunctionCall($messages, part.callId)}
+                    result={part.resultId ? $messages[part.resultId]?.content ?? null : null}
                 />
             {/if}
         {/each}

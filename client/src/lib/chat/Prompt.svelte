@@ -23,8 +23,8 @@ $: if ($promptSendMode === 'enter') {
 }
 
 setTimeout(() => {
-    textArea.selectEnd();
-}, 10);
+    textArea?.selectEnd();
+}, 50);
 
 let textArea: TextArea;
 </script>

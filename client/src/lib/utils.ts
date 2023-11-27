@@ -26,6 +26,20 @@ export function debounce<T extends (...args: any[]) => void>(
     return debouncedFunction as ((...args: Parameters<T>) => void) & { cancel: () => void };
 }
 
+export function throttleIgnore(
+    func: (...args: Array<any>) => void,
+    delay: number = 8
+) {
+    let lastCall = 0;
+    return (...args: Array<any>) => {
+        const now = new Date().getTime();
+        if (now - lastCall >= delay) {
+            lastCall = now;
+            func(...args);
+        }
+    };
+}
+
 export function selectAllTextInElement(elem: HTMLElement) {
 	elem.focus();
 	const range = document.createRange();

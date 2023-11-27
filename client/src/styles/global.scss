@@ -92,10 +92,6 @@
     border-radius: 9999px;
 }
 
-.markdown-body.isolated-code-block pre.markdown-code-block {
-    background-color: rgb(34, 39, 46);
-    border-radius: 0;
-}
 .markdown-body.transparent-code-block {
     background: none;
 
@@ -104,10 +100,9 @@
         padding: 0;
         line-height: 1.5rem;
 
-        code.hljs {
-            color: white;
-        }
-
+        // code.hljs {
+        //     color: white;
+        // }
     }
 }
 

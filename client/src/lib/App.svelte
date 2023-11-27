@@ -2,20 +2,39 @@
 import { 
     plan,
     scrollIntoViewDiv,
+    autoScrollEnabled,
     scrollContainerDiv,
-    scrollChatToBottom,
     serverError,
 } from '$lib/main';
+import { debounce } from '$lib/utils';
 import Prompt from '$lib/chat/Prompt.svelte';
 import UserResponse from '$lib/chat/UserResponse.svelte';
 import AssistantResponse from '$lib/chat/AssistantResponse.svelte';
 
+let lastScrollTop: number = 0;
+
+function handleScroll() {
+    if (!$scrollContainerDiv) return;
+    const { scrollHeight, scrollTop, clientHeight } = $scrollContainerDiv;
+    if (scrollTop < lastScrollTop) {
+        $autoScrollEnabled = false;
+    } else if (scrollHeight - scrollTop <= clientHeight + 50) {
+        $autoScrollEnabled = true;
+    }
+    lastScrollTop = scrollTop;
+}
+
+const handleScrollDebounced = debounce(handleScroll, 100);
 </script>
 
 <div class="container">
     <div class="chats-container">
         <div class="scroll-to-bottom-container">
-            <div class="scroll-to-bottom" bind:this={$scrollContainerDiv}>
+            <div
+                class="scroll-to-bottom"
+                bind:this={$scrollContainerDiv}
+                on:scroll={handleScrollDebounced}
+            >
                 <div class="chats">
                     <div class="header">
                     </div>
@@ -68,6 +87,22 @@ import AssistantResponse from '$lib/chat/AssistantResponse.svelte';
             </div>
         </div>
     {/if}
+    <!-- <button -->
+    <!--     on:click={() => { -->
+    <!--         scrollChatDiv(); -->
+    <!--     }} -->
+    <!--     style="position: absolute; top: 4rem; right: 2rem;" -->
+    <!-- > -->
+    <!--     Scroll to bottom -->
+    <!-- </button> -->
+    <!-- <button -->
+    <!--     on:click={() => { -->
+    <!--         isScrolledToBottom = chatIsScrolledToBottom(); -->
+    <!--     }} -->
+    <!--     style="position: absolute; top: 6rem; right: 2rem;" -->
+    <!-- > -->
+    <!--     Is scrolled to bottom? {`${isScrolledToBottom}`} -->
+    <!-- </button> -->
 </div>
 
 

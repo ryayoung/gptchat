@@ -1,6 +1,7 @@
 import { writable, get, derived, type Readable } from 'svelte/store';
 import { tick } from 'svelte';
 import { v4 as uuidv4 } from 'uuid';
+import { debounce, throttleIgnore } from '$lib/utils';
 import {
     socketEmit,
     socketOn,
@@ -110,23 +111,36 @@ export const prompt = writable<string>('');
 export const promptSendMode = writable<'enter' | 'ctrl-enter'>('enter');
 export const scrollIntoViewDiv = writable<HTMLDivElement | null>(null);
 export const scrollContainerDiv = writable<HTMLDivElement | null>(null);
+export const autoScrollEnabled = writable<boolean>(true);
 
-export function chatIsScrolledToBottom(): boolean {
+let lastScrollHeight: number = 0;
+
+export function scrollChatDiv(ifChanged: boolean = false) {
     const div = get(scrollContainerDiv);
-    if (!div) return false;
-    return div.scrollHeight - div.scrollTop <= div.clientHeight;
+    if (!div) return;
+    const { scrollHeight } = div;
+    if (!ifChanged || scrollHeight !== lastScrollHeight) {
+        const ghostDiv = get(scrollIntoViewDiv);
+        if (ghostDiv) {
+            ghostDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+    lastScrollHeight = scrollHeight;
 }
 
-export function scrollChatToBottom(checkFirst: boolean = false) {
-    if (checkFirst && !chatIsScrolledToBottom()) {
-        return;
+export const autoScrollChatIfEnabled = throttleIgnore(() => {
+    if (get(autoScrollEnabled)) {
+        tick().then(() => {
+            scrollChatDiv(true);
+        })
     }
+}, 200);
+
+export function forceAutoScrollChat() {
     tick().then(() => {
-        const div = get(scrollIntoViewDiv);
-        if (div) {
-            div.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }
+        scrollChatDiv();
     })
+    autoScrollEnabled.set(true);
 }
 
 export function deleteAfterUserMessage(id: string) {
@@ -296,8 +310,8 @@ function updateMessageFromDelta(existing: AssistantMessage, delta: AssistantDelt
 }
 
 socketOn('update-message', (message: Delta) => {
-    const wasScrolledToBottom = chatIsScrolledToBottom();
     if (!get(generating)) return;
+
     if (message.id in get(messages)) {
         messages.update(store => {
             const existing = store[message.id];
@@ -306,24 +320,20 @@ socketOn('update-message', (message: Delta) => {
                 if (needToUpdatePlan) {
                     tick().then(() => {
                         setPlan();
-                        if (wasScrolledToBottom) {
-                            scrollChatToBottom();
-                        }
                     })
-                } else {
-                    if (wasScrolledToBottom) {
-                        scrollChatToBottom();
-                    }
                 }
+                tick().then(() => {
+                    autoScrollChatIfEnabled();
+                })
             }
             return store;
         })
     } else {
         if (message.role) {
             addMessage(newMessageFromDelta(message));
-            if (wasScrolledToBottom) {
-                scrollChatToBottom();
-            }
+            tick().then(() => {
+                autoScrollChatIfEnabled();
+            })
         }
     }
 })
@@ -358,7 +368,7 @@ export function sendMessage() {
     generating.set(true);
     prompt.set('');
 
-    scrollChatToBottom();
+    forceAutoScrollChat();
 }
 
 export function stopGenerating() {
@@ -455,7 +465,7 @@ const configHandler = {
         messageOrder.set(newMessageOrder);
         setPlan();
 
-        scrollChatToBottom();
+        forceAutoScrollChat();
     },
 }
 
@@ -476,7 +486,7 @@ export function regenerateOnUserMessage(id: string) {
     socketEmit('send-message', { messages: getCleanedMessagesList() });
     generating.set(true);
 
-    scrollChatToBottom();
+    forceAutoScrollChat();
 }
 
 export function regenerateOnAssistantResponse(planIndex: number) {
@@ -487,8 +497,6 @@ export function regenerateOnAssistantResponse(planIndex: number) {
 }
 
 export const serverError = writable<string | null>(null);
-
-serverError.set("JSONDecodeError: Expecting value: line 1 column 1 (char 0)");
 
 socketOn("error", (err: any) => {
     console.log("Server Error:", err);

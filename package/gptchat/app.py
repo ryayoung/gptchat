@@ -38,7 +38,6 @@ def serve(path):
     """
     Runs when the user visits the website. Responds by sending the frontend code.
     """
-    print("INDEX HIT")
     assert app.static_folder is not None
     if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
@@ -102,11 +101,6 @@ def finish_generating(to: str | None = None, **kwargs):
     return socket_emit("finish-generating", to=to, **kwargs)
 
 
-class Config(TypedDict, total=False):
-    messages: list[dict]
-    functions: dict
-
-
 def handle_send_message(func):
     param_names = set(inspect.signature(func).parameters.keys())
     assert param_names == {"messages"}, (
@@ -115,7 +109,14 @@ def handle_send_message(func):
     @socketio.on("send-message")
     def wrapper(arguments: dict):
         try:
-            func(**arguments)
+            result = func(**arguments)
+            if result is None:
+                pass
+            elif isinstance(result, dict):
+                update_message(result)
+            elif isinstance(result, list):
+                for msg in result:
+                    update_message(msg)
         except Exception as e:
             socket_emit("error", f"{type(e).__name__}: {e}")
             sleep(.05)
@@ -130,12 +131,34 @@ def handle_connect(func):
     return socketio.on("connect")(func)
 
 
-def update_message(delta: dict, id: str | None = None, to: str | None = None, **kwargs):
-    if id:
-        delta["id"] = str(id)
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.chat.chat_completion_chunk import ChoiceDelta
+import pydantic
+from typing import Any
 
-    assert "id" in delta, "Must provide a message 'id' to update"
-    return socket_emit("update-message", delta, to=to, **kwargs)
+def update_message(
+    update: dict[Any, Any] | ChatCompletionMessage | ChoiceDelta, 
+    id: str | None = None, 
+    **kwargs,
+):
+    if isinstance(update, pydantic.BaseModel):
+        update = update.model_dump(exclude_unset=True)
+    else:
+        update = {**update}
+
+    if id:
+        update["id"] = str(id)
+    elif "id" not in update:
+        update["id"] = new_id()
+
+    assert update.get("role") != "tool", "Tool calls not supported yet."
+
+    return socket_emit("update-message", update, **kwargs)
+
+
+class Config(TypedDict, total=False):
+    messages: list[dict]
+    functions: dict
 
 
 CONFIG: Config | dict = {}
@@ -152,5 +175,59 @@ def connect():
         socket_emit("config", CONFIG)
 
 
-def run_app(**kwargs):
+def run_app(port: int = 5000, **kwargs):
+    kwargs["port"] = port
     socketio.run(app, **kwargs)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

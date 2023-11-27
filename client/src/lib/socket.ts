@@ -2,7 +2,7 @@ import { io, type Socket } from 'socket.io-client';
 
 const PROD = true;
 
-const BASE_URL = PROD ? '' : 'http://127.0.0.1:5000';
+const BASE_URL = PROD ? '' : 'http://127.0.0.1:5003';
 const socket = io(BASE_URL, { transports: ['websocket']});
 
 

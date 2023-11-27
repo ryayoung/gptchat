@@ -85,7 +85,7 @@ let open: boolean = $generating ? true : false;
     <div class="action-content">
         {#if formattedArgs}
             <div class="header">Arguments</div>
-            <div class="markdown-body isolated-code-block selectable-text-deep">
+            <div class="markdown-body arguments selectable-text-deep">
                 {@html formattedArgs}
             </div>
         {/if}
@@ -190,19 +190,27 @@ let open: boolean = $generating ? true : false;
     margin-top: .125rem;
     margin-bottom: .75rem;
     border-radius: .75rem;
+    border: 1px solid var(--color-border-default);
 
     .header {
         font-size: .75rem;
         line-height: 1rem;
         padding: .5rem 1rem;
-        background-color: rgba(34, 39, 46, 0.9);
-        color: rgb(217, 217, 227);
+        //background-color: rgba(34, 39, 46, 0.9);
+        //color: rgb(217, 217, 227);
+    }
+
+    .markdown-body.arguments {
+        border-radius: 0;
+        border-top: 1px solid var(--color-border-default);
+        border-bottom: 1px solid var(--color-border-default);
     }
 
     .footer {
         padding: 1rem;
-        background-color: rgba(34, 39, 46, 0.9);
-        color: rgb(217, 217, 227);
+        //background-color: rgba(34, 39, 46, 0.9);
+        //color: rgb(217, 217, 227);
+        //border: 1px solid var(--color-border-default);
 
         .title {
             font-size: .75rem;
