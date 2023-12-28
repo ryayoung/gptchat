@@ -1,11 +1,15 @@
-import { writable, get, derived, type Readable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { tick } from 'svelte';
 import { v4 as uuidv4 } from 'uuid';
-import { debounce, throttleIgnore } from '$lib/utils';
+import { throttleIgnore, readFile } from '$lib/utils';
 import {
     socketEmit,
     socketOn,
 } from '$lib/socket';
+
+const darkModePreferred: boolean = window.matchMedia('(prefers-color-scheme: dark)').matches ? true : false;
+export const darkMode = writable<boolean>(darkModePreferred);
+darkMode.subscribe(val => document.documentElement.classList[val ? 'add' : 'remove']('dark'));
 
 type UserMessage = {
     id: string
@@ -18,7 +22,7 @@ export type FunctionCall = {
     arguments: string | null
 }
 
-type AssistantMessage = {
+export type AssistantMessage = {
     id: string
     role: "assistant"
     content: string | null
@@ -74,7 +78,7 @@ type UserPlan = {
 
 export type PlanPart = ContentPlan | FunctionPlan
 
-type AssistantPlan = {
+export type AssistantPlan = {
     type: 'assistant'
     parts: PlanPart[]
 }
@@ -102,16 +106,79 @@ export type FunctionDisplayConfig = {
     error?: string
 }
 
+export type TextFileUpload = {
+    type: 'text'
+    id: string
+    name: string
+    text: string
+}
+export type ImageFileUpload = {
+    type: 'image'
+    id: string
+    name: string
+    image_url: string
+}
+export type FileUpload = TextFileUpload | ImageFileUpload
+
 export const functionDisplayConfig = writable<RecordOf<FunctionDisplayConfig>>({});
 export const messages = writable<RecordOf<Message>>({});
 export const messageOrder = writable<string[]>([]);
 export const plan = writable<Array<PlanMessage>>([]);
 export const generating = writable<boolean>(false);
 export const prompt = writable<string>('');
-export const promptSendMode = writable<'enter' | 'ctrl-enter'>('enter');
+export const fileUploads = writable<FileUpload[]>([]);
 export const scrollIntoViewDiv = writable<HTMLDivElement | null>(null);
 export const scrollContainerDiv = writable<HTMLDivElement | null>(null);
 export const autoScrollEnabled = writable<boolean>(true);
+
+
+export function uploadFile() {
+    const handleFile: RecordOf<(file: File) => Promise<FileUpload>> = {
+        async text(file) {
+            const text = await readFile(file, 'Text');
+            return {
+                type: 'text',
+                id: uuidv4(),
+                name: file.name,
+                text,
+            }
+        },
+        async image(file) {
+            const image_url = await readFile(file, 'DataURL');
+            return {
+                type: 'image',
+                id: uuidv4(),
+                name: file.name,
+                image_url,
+            }
+        }
+    } as const;
+
+    const input = document.createElement('input');
+    input.type = 'file';
+
+    input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) {
+            return;
+        }
+
+        const type = file.type.startsWith('image') ? 'image' : 'text';
+
+        try {
+            const fileUpload = await handleFile[type](file);
+            console.log(fileUpload);
+            fileUploads.update(store => {
+                store.push(fileUpload);
+                return store;
+            })
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    input.click();
+}
 
 let lastScrollHeight: number = 0;
 
@@ -119,11 +186,12 @@ export function scrollChatDiv(ifChanged: boolean = false) {
     const div = get(scrollContainerDiv);
     if (!div) return;
     const { scrollHeight } = div;
-    if (!ifChanged || scrollHeight !== lastScrollHeight) {
-        const ghostDiv = get(scrollIntoViewDiv);
-        if (ghostDiv) {
-            ghostDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+    if (ifChanged && scrollHeight === lastScrollHeight) {
+        return;
+    }
+    const ghostDiv = get(scrollIntoViewDiv);
+    if (ghostDiv) {
+        ghostDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     lastScrollHeight = scrollHeight;
 }

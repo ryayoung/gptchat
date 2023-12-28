@@ -1,7 +1,7 @@
 import os
 import inspect
 from uuid import uuid4
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request
 from flask_socketio import SocketIO, emit
 from typing import Literal, get_args, TypedDict
 
@@ -22,7 +22,7 @@ CLIENT_CHANNELS = set(get_args(ClientChannel))
 
 
 package_dir = os.path.dirname(__file__)
-build_path = os.path.join(package_dir, '..', 'build')
+build_path = os.path.join(package_dir, '..', 'static')
 
 app = Flask(__name__, static_folder=build_path)
 socketio = SocketIO(
@@ -32,17 +32,29 @@ socketio = SocketIO(
     async_handlers=True,
 )
 
-@app.route("/", defaults={"path": ""})
+@app.route("/", defaults={"path": "index.html"})
 @app.route("/<path:path>")
 def serve(path):
     """
     Runs when the user visits the website. Responds by sending the frontend code.
     """
-    assert app.static_folder is not None
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
+    accept_encoding = request.headers.get("Accept-Encoding", "")
+    dir = app.static_folder
+    assert dir is not None
+
+    original_file = os.path.join(dir, path)
+    br_file = original_file + '.br'
+    gz_file = original_file + '.gz'
+
+    if 'br' in accept_encoding and os.path.exists(br_file):
+        res = send_from_directory(dir, path + '.br')
+        res.headers['Content-Encoding'] = 'br'
+    elif 'gzip' in accept_encoding and os.path.exists(gz_file):
+        res = send_from_directory(dir, path + '.gz')
+        res.headers['Content-Encoding'] = 'gzip'
     else:
-        return send_from_directory(app.static_folder, "index.html")
+        res = send_from_directory(dir, path)
+    return res
 
 
 def socket_on(channel: ServerChannel):

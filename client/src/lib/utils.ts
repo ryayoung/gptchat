@@ -51,31 +51,59 @@ export function selectAllTextInElement(elem: HTMLElement) {
 	}
 }
 
-import { marked } from 'marked';
+import { Marked } from 'marked';
 import hljs from 'highlight.js';
 
-const renderer = new marked.Renderer();
-
-renderer.code = (code: string, language: string) => {
-    const validLang = hljs.getLanguage(language) ? language : 'plaintext';
-    const highlightedCode = hljs.highlight(code, { language: validLang }).value;
-
-    return `<pre class="markdown-code-block"><code class="hljs language-${validLang}">${highlightedCode}</code></pre>`;
+type HighlightedCode = {
+    language: string
+    code: string
 }
 
-export const markedOptions = {
-    renderer: renderer,
-    mangle: false,
-    headerIds: false,
-};
-
-marked.setOptions(markedOptions);
-
-export function toMarkdown(rawText: string | null): string {
-    if (rawText === null) return '';
-    // Keeping this as a separate function in case of future changes
-    return marked(rawText);
+function highlightCode(code: string, language: string): HighlightedCode {
+    language = hljs.getLanguage(language) ? language : 'plaintext';
+    code = hljs.highlight(code, { language }).value;
+    return {
+        language,
+        code: `<code class="hljs language-${language}">${code}</code>`
+    }
 }
+
+function parseCodePlain(rawCode: string, rawLanguage: string): string {
+    const { code } = highlightCode(rawCode, rawLanguage);
+    return `<pre class="markdown-code-block plain">${code}</pre>`;
+}
+
+function parseCodeWrapped(rawCode: string, rawLanguage: string): string {
+    const { language, code } = highlightCode(rawCode, rawLanguage);
+    if (language === 'plaintext') {
+        return `<pre class="markdown-code-block plain">${code}</pre>`;
+    }
+    return `\
+<div class="wrapped-code-container">
+    <div class="lang-banner">
+        <span>${language}</span>
+    </div>
+    <pre class="markdown-code-block wrapped">${code}</pre>
+</div>`;
+}
+
+
+export function createMarkdownRenderer(wrapCode: boolean = false) {
+    const marked = new Marked();
+    const renderer = new marked.Renderer();
+    if (wrapCode) {
+        renderer.code = parseCodeWrapped;
+    } else {
+        renderer.code = parseCodePlain;
+    }
+    marked.setOptions({
+        renderer: renderer,
+    })
+    return marked.parse.bind(marked) as (markdown: string) => string;
+}
+
+export const toMarkdown = createMarkdownRenderer(false);
+export const toMarkdownWrappedCode = createMarkdownRenderer(true);
 
 
 const pythonErrorRegex = /^\w*(Error|Exception|An error):/;
@@ -88,4 +116,34 @@ export function isPythonErrorString(s: string): boolean {
 
 export function elemIsScrollledToBottom(elem: HTMLElement): boolean {
     return elem.scrollHeight - elem.scrollTop <= elem.clientHeight;
+}
+
+
+type FileReadMethod = 'ArrayBuffer' | 'BinaryString' | 'Text' | 'DataURL';
+type FileReadReturnTypeMap = {
+    ArrayBuffer: ArrayBuffer
+    BinaryString: string;
+    Text: string;
+    DataURL: string;
+}
+export function readFile<T extends FileReadMethod>(
+    file: File,
+    as: T
+): Promise<FileReadReturnTypeMap[T]> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+            const data = e.target?.result;
+            if (data !== null && data !== undefined) {
+                resolve(data as FileReadReturnTypeMap[T]);
+            } else {
+                reject(new Error('File read resulted in null data'));
+            }
+        };
+        reader.onerror = (e: ProgressEvent<FileReader>) => {
+            reject(new Error(`Error reading file: ${e.target?.error?.message || 'Unknown error'}`));
+        };
+        reader[`readAs${as}`](file);
+    })
 }

@@ -2,10 +2,11 @@
 import { tick } from 'svelte';
 import {
     messages,
+    generating,
     regenerateOnUserMessage,
 } from '$lib/main';
-import PencilIcon from '$lib/icons/PencilIcon.svelte';
-import TextArea from '$lib/ui/TextArea.svelte';
+import PencilIcon from '$lib/icons/Pencil.svelte';
+import TextArea from '$lib/chat/TextArea.svelte';
 export let id: string;
 
 let editing: boolean = false;
@@ -16,7 +17,7 @@ function startEditing() {
     editedContent = content;
     editing = true;
     tick().then(() => {
-        textArea?.selectEnd();
+        textArea?.focus();
     })
 }
 
@@ -26,10 +27,13 @@ function stopEditing() {
 }
 
 function saveAndSubmit() {
-    const msg = $messages[id];
-    if (msg) {
-        msg.content = editedContent;
-    }
+    messages.update(store => {
+        const msg = store[id];
+        if (msg) {
+            msg.content = editedContent;
+        }
+        return store;
+    })
     stopEditing();
     regenerateOnUserMessage(id);
 }
@@ -40,9 +44,9 @@ let textArea: TextArea | null = null;
 </script>
 
 <div class="sections-container">
-    <div class="content-container">
+    <div class="content-container  flex-col">
         {#if !editing}
-            <div class="user-text selectable-text-deep">
+            <div class="user-text  flex-col items-start gap.75 selectable-text-deep">
                 <div>{@html content}</div>
             </div>
         {:else}
@@ -51,29 +55,24 @@ let textArea: TextArea | null = null;
                 value={editedContent}
                 on:customchange={(e) => editedContent = e.detail}
                 style="min-height: 1.25rem; word-wrap: break-word; white-space: pre-wrap;"
-                on:keydown={(e) => {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                        saveAndSubmit();
-                    }
-                }}
+                on:submit={saveAndSubmit}
+                submitKeyMode="ctrl-enter"
             />
-            <div class="editing-controls">
-                <button class="save" on:click={saveAndSubmit}>
-                    <div>Save & Submit</div>
+            <div class="editing-controls  flex justify-center gap.5">
+                <button class="relative btn btn-primary" on:click={saveAndSubmit} disabled={$generating}>
+                    <div class="flex-center">Save & Submit</div>
                 </button>
-                <button class="cancel" on:click={stopEditing}>
-                    <div>Cancel</div>
+                <button class="relative btn btn-neutral" on:click={stopEditing}>
+                    <div class="flex-center">Cancel</div>
                 </button>
             </div>
         {/if}
     </div>
     {#if !editing}
-        <div class="controls">
-            <div class="buttons-container">
-                <button
-                    on:click={startEditing}
-                >
-                    <div class="icon-wrapper">
+        <div class="controls  flex gap.75">
+            <div class="buttons-container  flex gap.25">
+                <button on:click={startEditing}>
+                    <div class="icon-wrapper  flex items-center gap.375 text-xs">
                         <PencilIcon/>
                     </div>
                 </button>
@@ -83,108 +82,37 @@ let textArea: TextArea | null = null;
 </div>
 
 <style lang="scss">
+@import '../../styles/pre.scss';
 
 .content-container {
     max-width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
 
     .user-text {
         min-height: 1.25rem;
         word-wrap: break-word;
         white-space: pre-wrap;
         overflow-x: auto;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: .75rem;
     }
-
 }
 
 .editing-controls {
     margin-top: .5rem;
-    display: flex;
-    justify-content: center;
     text-align: center;
-    font-size: 1rem;
-    line-height: 1.5rem;
-
-    button {
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        font-size: .875rem;
-        font-weight: 500;
-        line-height: 1.25rem;
-        padding: .5rem .75rem;
-        pointer-events: auto;
-        border: 1px solid transparent;
-        border-radius: .5rem;
-
-        div {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: .5rem;
-            width: 100%;
-        }
-    }
-
-    button.save {
-        position: relative;
-        background-color: var(--color-accent-fg-darker);
-        color: white;
-        margin-right: .5rem;
-
-        &:hover {
-            background-color: var(--color-accent-fg-darkest);
-        }
-    }
-
-    button.cancel {
-        border-color: rgba(0,0,0,.1);
-        background: none;
-
-        &:hover {
-            background-color: rgb(247,247,248);
-        }
-    }
 }
 
 .controls {
     margin-top: .25rem;
-    display: flex;
-    justify-content: flex-start;
-    gap: .75rem;
 }
 
 .buttons-container {
-    display: flex;
-    justify-content: flex-start;
-    gap: .25rem;
-    color: rgb(172,172,190);
-    margin-top: 0;
+    color: color($gray-500);
 
     button {
-        padding: .25rem;
-        padding-left: 0;
-        cursor: pointer;
+        padding: .25rem .25rem .25rem 0;
         visibility: var(--button-visibility);
-        background: none;
-        border: none;
 
         &:hover {
-            color: rgb(5,5,9);
-        }
-
-        .icon-wrapper {
-            display: flex;
-            align-items: center;
-            gap: .375rem;
-            font-size: .75rem;
-            line-height: 1rem;
+            color: color($text-primary);
         }
     }
 }

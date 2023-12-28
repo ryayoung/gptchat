@@ -8,9 +8,9 @@ import {
     toMarkdown,
     isPythonErrorString,
 } from '$lib/utils';
-import CheckIcon from '$lib/icons/CheckIcon.svelte';
-import BangIcon from '$lib/icons/BangIcon.svelte';
-import ChevronIcon from '$lib/icons/ChevronIcon.svelte';
+import CheckIcon from '$lib/icons/Check.svelte';
+import BangIcon from '$lib/icons/Bang.svelte';
+import ChevronIcon from '$lib/icons/Chevron.svelte';
 
 type FunctionCall = {
     name: string;
@@ -27,7 +27,6 @@ $: progressMode = result && isPythonErrorString(result) ? 'error'
 
 $: functionName = functionCall.name;
 $: formattedArgs = getFormattedArgs(functionCall.arguments);
-$: formattedResult = getFormattedResult(result);
 
 $: defaultDisplay = toMarkdown(`Function call to **\`${functionName}()\`**`)
 
@@ -52,17 +51,12 @@ function getFormattedArgs(args: string | null | undefined): string | null {
     return toMarkdown("```json\n" + content + "\n```");
 }
 
-function getFormattedResult(result: string | null | undefined): string | null {
-    if (!result) return null;
-    return toMarkdown("```\n" + result + "\n```");
-}
-
-let open: boolean = $generating ? true : false;
+let open: boolean = $generating ? true : true;
 </script>
 
-<div class="action-tab">
-    <div class="indicator-container">
-        <div class="indicator {progressMode}">
+<div class="tab  flex items-center gap.625">
+    <div class="indicator-container  relative">
+        <div class="indicator {progressMode}  flex-center full rounded">
             {#if progressMode === 'error'}
                 <BangIcon/>
             {:else if progressMode === 'progress'}
@@ -72,8 +66,8 @@ let open: boolean = $generating ? true : false;
             {/if}
         </div>
     </div>
-    <div class="action-tab-content">
-        <button class="action" on:click={() => open = !open}>
+    <div class="label-container  relative w-full">
+        <button class="label  flex items-center gap.25" on:click={() => open = !open}>
             <div class="markdown-body function-status selectable-text-deep">
                 {@html displayText}
             </div>
@@ -82,141 +76,93 @@ let open: boolean = $generating ? true : false;
     </div>
 </div>
 {#if open}
-    <div class="action-content">
+    <div class="content  overflow-hidden">
         {#if formattedArgs}
-            <div class="header">Arguments</div>
+            <div class="header  text-xs">Arguments</div>
             <div class="markdown-body arguments selectable-text-deep">
                 {@html formattedArgs}
             </div>
         {/if}
-        {#if formattedResult}
+        {#if result}
             <div class="footer">
-                <div class="title">Result</div>
-                <div class="markdown-body transparent-code-block selectable-text-deep">
-                    {@html formattedResult}
-                </div>
+                <div class="title  text-xs">Result</div>
+                <pre class="result selectable-text">{result}</pre>
             </div>
         {/if}
     </div>
 {/if}
 
 <style lang="scss">
-.action-tab {
+@import '../../styles/pre.scss';
+
+.tab {
     margin-bottom: .625rem;
     margin-top: .625rem;
-    display: flex;
-    align-items: center;
-    gap: .625rem;
+}
 
-    .indicator-container {
-        position: relative;
-        flex-shrink: 0;
-        width: 1.25rem;
-        height: 1.25rem;
+.indicator-container {
+    flex-shrink: 0;
+    @include square(1.25rem);
+}
+.indicator {
+    @include absolute($top: 0, $left: 0);
+    color: white;
 
-        .indicator {
-            position: absolute;
-            left: 0;
-            top: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-
-            &.complete {
-                color: var(--color-canvas-default);
-                background-color: var(--color-accent-fg);
-                border-radius: 9999px;
-            }
-            &.error {
-                color: var(--color-canvas-default);
-                background-color: var(--color-danger-fg);
-                border-radius: 9999px;
-            }
-            &.progress {
-
-                .codicon.codicon-loading {
-                    height: 12px;
-                    line-height: 1.25rem;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    font-size: 1.25rem;
-                    animation: rotate-circle 2s linear infinite;
-                }
-            }
-        }
+    &.complete {
+        background-color: color($accent);
     }
+    &.error {
+        background-color: color($red);
+    }
+    &.progress {
+        color: color($text-secondary);
 
-    .action-tab-content {
-        position: relative;
-        margin-top: -.75px;
-        //height: 1.25rem;
-        width: 100%;
-        line-height: 1.25rem;
-
-        button.action {
-            cursor: pointer;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: .25rem;
-            color: inherit;
-            font-family: inherit;
-            font-size: 100%;
-            font-weight: inherit;
-            line-height: inherit;
-            margin: 0;
-            padding: 0;
-            background-color: transparent;
-            border-width: 0;
-
-            .markdown-body.function-status {
-                color: var(--color-fg-muted);
-                line-height: 1.25rem;
-                text-align: left;
-
-                :global(p) {
-                    margin-bottom: .25rem;
-                }
-            }
+        .codicon.codicon-loading {
+            height: 12px;
+            line-height: 1.25rem;
+            font-size: 1.25rem;
+            animation: rotate-circle 2s linear infinite;
         }
     }
 }
 
-.action-content {
-    overflow: hidden;
-    margin-top: .125rem;
-    margin-bottom: .75rem;
-    border-radius: .75rem;
-    border: 1px solid var(--color-border-default);
+.label-container {
+    margin-top: -.75px;
+    line-height: 1.25rem;
+}
+button.label {
+    .markdown-body.function-status {
+        color: color($text-secondary);
+        line-height: 1.25rem;
+        text-align: left;
 
-    .header {
-        font-size: .75rem;
-        line-height: 1rem;
-        padding: .5rem 1rem;
-        //background-color: rgba(34, 39, 46, 0.9);
-        //color: rgb(217, 217, 227);
-    }
-
-    .markdown-body.arguments {
-        border-radius: 0;
-        border-top: 1px solid var(--color-border-default);
-        border-bottom: 1px solid var(--color-border-default);
-    }
-
-    .footer {
-        padding: 1rem;
-        //background-color: rgba(34, 39, 46, 0.9);
-        //color: rgb(217, 217, 227);
-        //border: 1px solid var(--color-border-default);
-
-        .title {
-            font-size: .75rem;
-            line-height: 1rem;
+        :global(p) {
             margin-bottom: .25rem;
         }
+    }
+}
+
+.content {
+    margin: .125rem 0 .75rem 0;
+    border-radius: .75rem;
+    border: 1px solid color($border, .2);
+}
+
+.header {
+    padding: .5rem 1rem;
+}
+
+.markdown-body.arguments {
+    border-top: 1px solid color($border, .2);
+    border-bottom: 1px solid color($border, .2);
+}
+
+.footer {
+    padding: 1rem;
+    overflow: auto;
+
+    .title {
+        margin-bottom: .5rem;
     }
 }
 </style>
