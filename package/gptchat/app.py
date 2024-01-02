@@ -4,6 +4,7 @@ from uuid import uuid4
 from flask import Flask, send_from_directory, request
 from flask_socketio import SocketIO, emit
 from typing import Literal, get_args, TypedDict
+from gptchat.utils import iter_stream_choices, concat_stream
 
 ServerChannel = Literal[
     "connect",
@@ -13,9 +14,14 @@ ServerChannel = Literal[
 SERVER_CHANNELS = set(get_args(ServerChannel))
 
 ClientChannel = Literal[
+    "connect",
     "config",
-    "finish-generating",
-    "update-message",
+    "default-messages",
+    "message-set-all",
+    "message-set",
+    "message-update",
+    "generating-started",
+    "generating-done",
     "error",
 ]
 CLIENT_CHANNELS = set(get_args(ClientChannel))
@@ -109,17 +115,22 @@ def sleep(seconds: float):
     return socketio.sleep(seconds) # type:ignore
 
 
-def finish_generating(to: str | None = None, **kwargs):
-    return socket_emit("finish-generating", to=to, **kwargs)
+def generating_done(to: str | None = None, **kwargs):
+    return socket_emit("generating-done", to=to, **kwargs)
 
 
-def handle_send_message(func):
+def generating_started(to: str | None = None, **kwargs):
+    return socket_emit("generating-started", to=to, **kwargs)
+
+
+def start_generating(func):
     param_names = set(inspect.signature(func).parameters.keys())
     assert param_names == {"messages"}, (
         "Your send message handler should accept just one parameter: `messages`"
     )
-    @socketio.on("send-message")
+    @socketio.on("start-generating")
     def wrapper(arguments: dict):
+        generating_started()
         try:
             result = func(**arguments)
             if result is None:
@@ -134,7 +145,7 @@ def handle_send_message(func):
             sleep(.05)
             raise e
         finally:
-            finish_generating()
+            generating_done()
 
     return wrapper
 
@@ -143,29 +154,70 @@ def handle_connect(func):
     return socketio.on("connect")(func)
 
 
+from openai import Stream
+from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.chat.chat_completion_chunk import ChoiceDelta
+from openai.types.chat.chat_completion_chunk import ChoiceDelta, ChatCompletionChunk
 import pydantic
 from typing import Any
 
+
+def set_all_messages(messages: list[dict]):
+    socket_emit("message-set-all", messages)
+
+
+class ToolCallResult(TypedDict):
+    role: Literal["tool"]
+    content: str
+    tool_call_id: str
+
+
+def set_message(
+    message: dict | ChatCompletionMessage | ToolCallResult,
+    id: str | None = None,
+    **kwargs,
+):
+    if isinstance(message, pydantic.BaseModel):
+        message = message.model_dump(exclude_unset=True)
+    else:
+        message = {**message}
+
+    if id:
+        message["id"] = str(id)
+    else:
+        message["id"] = str(new_id())
+
+    return socket_emit("message-set", message, **kwargs)
+
+
+def stream_updates(stream: Stream[ChatCompletionChunk], delay: float = 0.0) -> Choice:
+    id = new_id()
+    choices = []
+
+    for choice in iter_stream_choices(stream):
+        choices.append(choice)
+        update_message(choice.delta, id=id)
+        sleep(delay)
+
+    return concat_stream(choices)
+
+
 def update_message(
-    update: dict[Any, Any] | ChatCompletionMessage | ChoiceDelta, 
+    delta: dict[Any, Any] | ChatCompletionMessage | ChoiceDelta, 
     id: str | None = None, 
     **kwargs,
 ):
-    if isinstance(update, pydantic.BaseModel):
-        update = update.model_dump(exclude_unset=True)
+    if isinstance(delta, pydantic.BaseModel):
+        delta = delta.model_dump(exclude_unset=True)
     else:
-        update = {**update}
+        delta = {**delta}
 
     if id:
-        update["id"] = str(id)
-    elif "id" not in update:
-        update["id"] = new_id()
+        delta["id"] = str(id)
+    else:
+        assert "id" in delta, "You must provide an id for the message you want to update. If it's a new message, create an id first"
 
-    assert update.get("role") != "tool", "Tool calls not supported yet."
-
-    return socket_emit("update-message", update, **kwargs)
+    return socket_emit("message-update", delta, **kwargs)
 
 
 class Config(TypedDict, total=False):
@@ -173,73 +225,18 @@ class Config(TypedDict, total=False):
     functions: dict
 
 
-CONFIG: Config | dict = {}
-
-
-def set_config(config: dict | Config):
-    global CONFIG
-    CONFIG = {**CONFIG, **config}
+config: Config | dict = {}
+default_messages: list[dict] = []
 
 
 @handle_connect
 def connect():
-    if CONFIG:
-        socket_emit("config", CONFIG)
+    if config:
+        socket_emit("config", config)
+    if default_messages:
+        socket_emit("default-messages", default_messages)
 
 
 def run_app(port: int = 5000, **kwargs):
     kwargs["port"] = port
     socketio.run(app, **kwargs)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

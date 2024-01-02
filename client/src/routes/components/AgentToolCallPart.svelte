@@ -1,57 +1,17 @@
 <script lang="ts">
-import { 
-    functionDisplayConfig,
-    generating,
-    type FunctionCallProgressMode,
-} from '$lib/main';
-import {
-    toMarkdown,
-    isPythonErrorString,
-} from '$lib/utils';
-import CheckIcon from '$lib/icons/Check.svelte';
-import BangIcon from '$lib/icons/Bang.svelte';
-import ChevronIcon from '$lib/icons/Chevron.svelte';
-
-type FunctionCall = {
-    name: string;
-    arguments: string | null;
-}
-export let inProgress: boolean;
-export let functionCall: FunctionCall;
+import type { FunctionResultType } from '$lib/core';
+import CheckIcon from './icon/Check.svelte';
+import BangIcon from './icon/Bang.svelte';
+import ChevronIcon from './icon/Chevron.svelte';
+export let progressMode: string;
+export let title: string;
+export let args: string;
 export let result: string | null;
+export let generating: boolean;
+export let resultType: FunctionResultType;
+export let markdownRenderer: (markdown: string) => string;
 
-let progressMode: FunctionCallProgressMode;
-$: progressMode = result && isPythonErrorString(result) ? 'error'
-    : inProgress ? 'progress'
-    : 'complete';
-
-$: functionName = functionCall.name;
-$: formattedArgs = getFormattedArgs(functionCall.arguments);
-
-$: defaultDisplay = toMarkdown(`Function call to **\`${functionName}()\`**`)
-
-let displayText: string;
-
-$: if (functionName in $functionDisplayConfig) {
-    const config: string | undefined = $functionDisplayConfig[functionName][progressMode];
-    displayText = config ? toMarkdown(config.replace("\n\n", " ")) : defaultDisplay;
-} else {
-    displayText = defaultDisplay;
-}
-
-
-function getFormattedArgs(args: string | null | undefined): string | null {
-    if (!args) return null;
-    let content: string;
-    try {
-        content = JSON.stringify(JSON.parse(args), null, 2);
-    } catch (e) {
-        content = args;
-    }
-    return toMarkdown("```json\n" + content + "\n```");
-}
-
-let open: boolean = $generating ? true : true;
+let open: boolean = generating ? true : true;
 </script>
 
 <div class="tab  flex items-center gap.625">
@@ -69,7 +29,7 @@ let open: boolean = $generating ? true : true;
     <div class="label-container  relative w-full">
         <button class="label  flex items-center gap.25" on:click={() => open = !open}>
             <div class="markdown-body function-status selectable-text-deep">
-                {@html displayText}
+                {@html title}
             </div>
             <ChevronIcon {open}/>
         </button>
@@ -77,16 +37,22 @@ let open: boolean = $generating ? true : true;
 </div>
 {#if open}
     <div class="content  overflow-hidden">
-        {#if formattedArgs}
+        {#if args}
             <div class="header  text-xs">Arguments</div>
             <div class="markdown-body arguments selectable-text-deep">
-                {@html formattedArgs}
+                {@html args}
             </div>
         {/if}
         {#if result}
             <div class="footer">
                 <div class="title  text-xs">Result</div>
-                <pre class="result selectable-text">{result}</pre>
+                {#if resultType === 'text'}
+                    <pre class="result selectable-text">{result}</pre>
+                {:else if resultType === 'markdown'}
+                    <div class="markdown-body selectable-text-deep">
+                        {@html markdownRenderer(result)}
+                    </div>
+                {/if}
             </div>
         {/if}
     </div>
@@ -121,7 +87,6 @@ let open: boolean = $generating ? true : true;
             height: 12px;
             line-height: 1.25rem;
             font-size: 1.25rem;
-            animation: rotate-circle 2s linear infinite;
         }
     }
 }

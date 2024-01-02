@@ -16,6 +16,9 @@
     font-size: 1.1rem;
 }
 
+.codicon.codicon-loading {
+    animation: rotate-circle 2s linear infinite;
+}
 
 .dark .markdown-body {
     p {
@@ -51,3 +54,5 @@ div.wrapped-code-container {
         margin: 0;
     }
 }
+
+

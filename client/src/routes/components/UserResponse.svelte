@@ -1,20 +1,21 @@
 <script lang="ts">
-import { tick } from 'svelte';
-import {
-    messages,
-    generating,
-    regenerateOnUserMessage,
-} from '$lib/main';
-import PencilIcon from '$lib/icons/Pencil.svelte';
-import TextArea from '$lib/chat/TextArea.svelte';
+import { tick, createEventDispatcher } from 'svelte';
+import type { FileContentPart } from '$lib/core';
+import PencilIcon from './icon/Pencil.svelte';
+import TextArea from './TextArea.svelte';
+import BinaryFile from './BinaryFile.svelte';
+const dispatch = createEventDispatcher();
 export let id: string;
+export let contentText: string;
+export let contentFiles: FileContentPart[];
+export let generating: boolean;
 
 let editing: boolean = false;
 
 let editedContent: string = '';
 
 function startEditing() {
-    editedContent = content;
+    editedContent = contentText;
     editing = true;
     tick().then(() => {
         textArea?.focus();
@@ -27,27 +28,27 @@ function stopEditing() {
 }
 
 function saveAndSubmit() {
-    messages.update(store => {
-        const msg = store[id];
-        if (msg) {
-            msg.content = editedContent;
-        }
-        return store;
-    })
+    dispatch('submit', { text: editedContent, id });
     stopEditing();
-    regenerateOnUserMessage(id);
 }
-
-$: content = $messages[id]?.content ?? '';
 
 let textArea: TextArea | null = null;
 </script>
 
 <div class="sections-container">
     <div class="content-container  flex-col">
+        {#each contentFiles as file}
+            <div>
+                {#if file.type === 'image_url'}
+                    <img style="max-height: 12rem; width: auto; height: auto;" src={file.image_url.url} alt=Uploaded loading=lazy decoding=async/>
+                {:else if file.type === 'binary'}
+                    <BinaryFile name={file.name} style="margin: .5rem 0 1rem 0;"/>
+                {/if}
+            </div>
+        {/each}
         {#if !editing}
             <div class="user-text  flex-col items-start gap.75 selectable-text-deep">
-                <div>{@html content}</div>
+                {contentText}
             </div>
         {:else}
             <TextArea
@@ -59,10 +60,10 @@ let textArea: TextArea | null = null;
                 submitKeyMode="ctrl-enter"
             />
             <div class="editing-controls  flex justify-center gap.5">
-                <button class="relative btn btn-primary" on:click={saveAndSubmit} disabled={$generating}>
+                <button class="btn btn-primary" on:click={saveAndSubmit} disabled={generating}>
                     <div class="flex-center">Save & Submit</div>
                 </button>
-                <button class="relative btn btn-neutral" on:click={stopEditing}>
+                <button class="btn btn-neutral" on:click={stopEditing}>
                     <div class="flex-center">Cancel</div>
                 </button>
             </div>
@@ -87,12 +88,10 @@ let textArea: TextArea | null = null;
 .content-container {
     max-width: 100%;
 
-    .user-text {
-        min-height: 1.25rem;
-        word-wrap: break-word;
-        white-space: pre-wrap;
-        overflow-x: auto;
-    }
+}
+.user-text {
+    word-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 .editing-controls {

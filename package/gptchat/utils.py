@@ -1,10 +1,12 @@
-from typing import Iterable
+from typing import Iterable, Iterator
 import json
 from json import JSONDecodeError
+from openai import Stream
 from openai.types.chat import chat_completion as completion
 from openai.types.chat import chat_completion_chunk as completion_chunk
 from openai.types.chat.chat_completion_message import ChatCompletionMessage, FunctionCall
 from openai.types.chat.chat_completion_message_tool_call import Function, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 
 def parse_incomplete_json(string: str) -> dict:
@@ -101,13 +103,20 @@ def concat_stream(
         if chunk.delta.content is not None:
             handle_content(chunk.delta.content, msg)
 
-        if chunk.delta.function_call is not None:
-            handle_function_call(chunk.delta.function_call, msg)
-        elif chunk.delta.tool_calls is not None:
+        if chunk.delta.tool_calls is not None:
             handle_tool_calls(chunk.delta.tool_calls, msg)
+
+        elif chunk.delta.function_call is not None:
+            handle_function_call(chunk.delta.function_call, msg)
 
     return completion.Choice(
         index=0,
         message=msg,
         finish_reason=finish_reason,
     )
+
+
+def iter_stream_choices(stream: Stream[ChatCompletionChunk]) -> Iterator[completion_chunk.Choice]:
+    for chunk in stream:
+        if chunk.choices:
+            yield chunk.choices[0]

@@ -59,6 +59,15 @@
 }
 
 
+.set-visibility-on-hover {
+    --visibility: hidden;
+
+    &:hover {
+        --visibility: visible;
+    }
+}
+
+
 // TAILWIND
 
 .full {
@@ -92,6 +101,10 @@
 }
 .scroll-y {
     overflow-y: scroll;
+}
+.text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
 }
 .text-sm {
     font-size: .875rem;
