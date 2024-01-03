@@ -32,7 +32,7 @@ setTimeout(() => scroll.scroll('force'))
                     <PencilNewIcon/>
                 </button>
             </div>
-            {#if $connected}
+            {#if !$connected}
                 <CodiconLoading style="width: 1.5rem; height: 1.5rem;"/>
             {/if}
         </div>

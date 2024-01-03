@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gptchat"
-version = "0.0.5"
+version = "0.0.7"
 python_requires = ">=3.10, <3.12"
 description = "A local ChatGPT interface"
 authors = [
@@ -32,4 +32,4 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel.force-include]
-"build" = "build"
+"static" = "static"
