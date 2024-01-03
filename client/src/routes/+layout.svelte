@@ -1,9 +1,8 @@
 <script lang="ts">
-import '@vscode/codicons/dist/codicon.css';
-import '../styles/github.markdown.css';
-import '../styles/github-light.hljs.css';
-// import '../styles/github-dark-dimmed.hljs.css';
-import '../styles/splitview.scss';
+import '../styles/base.scss';
+import '../styles/utility.scss';
+import '../styles/github.markdown.scss';
+import '../styles/github.hljs.scss';
 import '../styles/global.scss';
 
 </script>
