@@ -1,5 +1,4 @@
-import type { Socket } from './socket';
-import * as util from '$lib/util';
+import * as util from '../util';
 
 export const errorsToShow: Record<CustomError['type'], boolean> = {
     Server: true,

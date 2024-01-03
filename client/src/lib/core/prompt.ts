@@ -1,4 +1,4 @@
-import * as util from '$lib/util';
+import * as util from '../util';
 import type { ImageContentPart, TextContentPart } from './openai';
 import type { ContentPart } from './message';
 

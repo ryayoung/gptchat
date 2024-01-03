@@ -1,4 +1,4 @@
-import * as util from '$lib/util';
+import * as util from '../util';
 import type { FileContentPart, SerializedPrompt } from './prompt';
 import type { ConfigStore, FunctionResultType, SerializedConfigStore } from './config';
 import type { GeneratingStore } from './generating';
