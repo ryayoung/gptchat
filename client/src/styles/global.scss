@@ -1,6 +1,5 @@
 @import '../styles/pre.scss';
 
-
 * {
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -8,16 +7,18 @@
     user-select: none;
 }
 
-.codicon[class*='codicon-'] {
+.codicon-svg {
     transition: background-color 0.1s ease-in-out;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.1rem;
+
+    width: 1.1rem;
+    height: 1.1rem;
 }
 
-.codicon.codicon-loading {
-    animation: rotate-circle 2s linear infinite;
+.codicon-svg.loading {
+    animation: rotate-circle 1s cubic-bezier(0.53, 0.21, 0.29, 0.67) infinite;
 }
 
 .dark .markdown-body {

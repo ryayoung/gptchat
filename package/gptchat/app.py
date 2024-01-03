@@ -1,4 +1,5 @@
 import os
+import time
 import inspect
 from uuid import uuid4
 from flask import Flask, send_from_directory, request
@@ -52,6 +53,7 @@ def serve(path):
     br_file = original_file + '.br'
     gz_file = original_file + '.gz'
 
+    # Send compressed, if browser supports
     if 'br' in accept_encoding and os.path.exists(br_file):
         res = send_from_directory(dir, path + '.br')
         res.headers['Content-Encoding'] = 'br'
@@ -60,6 +62,13 @@ def serve(path):
         res.headers['Content-Encoding'] = 'gzip'
     else:
         res = send_from_directory(dir, path)
+
+    # Caching headers
+    days_to_cache = 365
+    max_age = 86400 * days_to_cache
+    res.headers['Cache-Control'] = f'max-age={max_age}, public'
+    res.headers['Expires'] = time.strftime("%a, %d-%b-%Y %H:%M:%S GMT", time.gmtime(time.time() + max_age))
+
     return res
 
 

@@ -1,5 +1,8 @@
 import { Marked } from 'marked';
+// import { Marked } from "https://cdn.jsdelivr.net/npm/marked/marked.min.js";
 import hljs from 'highlight.js';
+// declare const hljs: any;
+// declare const marked: any;
 
 type HighlightedCode = {
     language: string
@@ -36,17 +39,17 @@ function parseCodeWrapped(rawCode: string, rawLanguage: string): string {
 
 
 export function createMarkdownRenderer(wrapCode: boolean = false) {
-    const marked = new Marked();
-    const renderer = new marked.Renderer();
+    const markd = new Marked();
+    const renderer = new markd.Renderer();
     if (wrapCode) {
         renderer.code = parseCodeWrapped;
     } else {
         renderer.code = parseCodePlain;
     }
-    marked.setOptions({
+    markd.setOptions({
         renderer: renderer,
     })
-    return marked.parse.bind(marked) as (markdown: string) => string;
+    return markd.parse.bind(markd) as (markdown: string) => string;
 }
 
 export const toMarkdown = createMarkdownRenderer(false);

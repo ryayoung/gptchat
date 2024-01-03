@@ -1,22 +1,30 @@
 <script lang="ts">
 import { createEventDispatcher } from 'svelte';
+import CodiconClose from './icon/CodiconClose.svelte';
 const dispatch = createEventDispatcher();
 export let type: string;
 export let text: string;
 </script>
 
-<div class="server-error flex items-start">
-    <button on:click={() => dispatch('remove')}>
-        <div class="codicon codicon-close"></div>
-    </button>
-    <div class="content flex-col gap.25">
-        <div class="header">{type} Error</div>
-        <div class="text selectable-text">{text}</div>
+<div class="background">
+    <div class="server-error flex items-start">
+        <button on:click={() => dispatch('remove')}>
+            <CodiconClose/>
+        </button>
+        <div class="content flex-col gap.25">
+            <div class="header">{type} Error</div>
+            <div class="text selectable-text">{text}</div>
+        </div>
     </div>
 </div>
 
 <style lang="scss">
 @import '../../styles/pre.scss';
+
+.background {
+    background-color: color($surface-primary);
+    border-radius: .5rem;
+}
 
 .server-error {
     background-color: color($black, .1);

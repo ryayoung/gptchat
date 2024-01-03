@@ -9,6 +9,7 @@ import ServerError from './ServerError.svelte';
 import BinaryFile from './BinaryFile.svelte';
 import ImageFile from './ImageFile.svelte';
 import PencilNewIcon from './icon/PencilNew.svelte';
+import CodiconLoading from './icon/CodiconLoading.svelte';
 
 export let chat: Chat;
 
@@ -31,8 +32,8 @@ setTimeout(() => scroll.scroll('force'))
                     <PencilNewIcon/>
                 </button>
             </div>
-            {#if !$connected}
-                <div class="codicon codicon-loading" style="width: 2rem; height: 2rem; font-size: 1.5rem"/>
+            {#if $connected}
+                <CodiconLoading style="width: 1.5rem; height: 1.5rem;"/>
             {/if}
         </div>
         {#each $rendered as response, idx}

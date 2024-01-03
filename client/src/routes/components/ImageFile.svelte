@@ -1,5 +1,6 @@
 <script lang="ts">
 import { createEventDispatcher } from 'svelte';
+import CodiconClose from './icon/CodiconClose.svelte';
 const dispatch = createEventDispatcher();
 export let image_url: string;
 export let removable: boolean;
@@ -9,7 +10,7 @@ export let removable: boolean;
     <span class="image  flex-center full" style="background-image: url({image_url});"/>
     {#if removable}
         <button class="remove  rounded" on:click={() => dispatch('remove')}>
-            <div class="codicon codicon-close"/>
+            <CodiconClose/>
         </button>
     {/if}
 </div>

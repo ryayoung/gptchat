@@ -3,6 +3,7 @@ import type { FunctionResultType } from '$lib/core';
 import CheckIcon from './icon/Check.svelte';
 import BangIcon from './icon/Bang.svelte';
 import ChevronIcon from './icon/Chevron.svelte';
+import CodiconLoading from './icon/CodiconLoading.svelte';
 export let progressMode: string;
 export let title: string;
 export let args: string;
@@ -20,7 +21,7 @@ let open: boolean = generating ? true : true;
             {#if progressMode === 'error'}
                 <BangIcon/>
             {:else if progressMode === 'progress'}
-                <div class="codicon codicon-loading"></div>
+                <CodiconLoading style="height: 1.25rem; width: 1.25rem;"/>
             {:else}
                 <CheckIcon/>
             {/if}
@@ -82,12 +83,6 @@ let open: boolean = generating ? true : true;
     }
     &.progress {
         color: color($text-secondary);
-
-        .codicon.codicon-loading {
-            height: 12px;
-            line-height: 1.25rem;
-            font-size: 1.25rem;
-        }
     }
 }
 

@@ -1,17 +1,19 @@
 <script lang="ts">
 import { createEventDispatcher } from 'svelte';
+import CodiconClose from './icon/CodiconClose.svelte';
+import CodiconFile from './icon/CodiconFile.svelte';
 const dispatch = createEventDispatcher();
 export let name: string;
 export let removable: boolean = false;
 export let style: string = '';
 </script>
 
-<div class="file-item  inline-flex items-center gap.5 relative set-visibility-on-hover" {style}>
-    <div class="icon codicon codicon-file"/>
+<div class="file-item  inline-flex items-center gap.5 relative set-visibility-on-hover text-sm" {style}>
+    <div class="icon"><CodiconFile/></div>
     <span>{name}</span>
     {#if removable}
         <button on:click={() => dispatch('remove')}>
-            <div class="codicon codicon-close"/>
+            <CodiconClose/>
         </button>
     {/if}
 </div>

@@ -1,5 +1,4 @@
 <script lang="ts">
-import '@vscode/codicons/dist/codicon.css';
 import '../styles/base.scss';
 import '../styles/utility.scss';
 import '../styles/github.markdown.scss';
