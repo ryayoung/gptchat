@@ -34,8 +34,8 @@ from openai import OpenAI
 
 openai_client = OpenAI(api_key="YOUR_API_KEY")
 
-@app.handle_send_message
-def message_handler(messages):
+@app.handle_start_generating
+def start_generating(messages):
     # get response from openai
     response = openai_client.chat.completions.create(
         messages=messages,
@@ -44,93 +44,89 @@ def message_handler(messages):
     new_msg = response.choices[0].message
 
     # send update to frontend
-    app.update_message(new_msg)
+    app.set_message(new_msg)
     
 
 app.run_app(debug=True, port=5002)
 ```
 
-That doesn't look quite like ChatGPT yet. The response is sent all at once, after a long delay. Let's try **streaming** instead.
-
-We'll define a utility function to stream an OpenAI response
+To stream messages like in ChatGPT, pass an openai stream to `stream_updates()`. When the stream is finished,
+this function will return the full message (all stream deltas combined).
 
 ```py
-def openai_chat_stream(messages, model: str = "gpt-4", **kwargs):
-    """
-    Streams an OpenAI chat completion message, and yields deltas.
-    """
+@app.handle_start_generating
+def start_generating(messages):
     stream = openai_client.chat.completions.create(
         messages=messages,
-        model=model,
+        model="gpt-4",
         stream=True,
-        **kwargs
     )
-    for chunk in stream:
-        if chunk.choices:
-            yield chunk.choices[0]
-```
-
-On the frontend, each message must have a unique identifier. In the previous example, when we ran
-`app.update_message(new_msg)`, a unique `id` was was assigned to `new_msg` for us.
-
-But when sending partial updates, we need to make sure each update
-has the same `id`, so they can be combined into a single message.
-
-Here's a new version of `message_handler()` for streaming.
-
-```py
-@app.handle_send_message
-def message_handler(messages):
-    stream = openai_chat_stream(messages)
-
-    id = app.new_id()
-    for chunk in stream:
-        app.update_message(chunk.delta, id=id)
+    full_message = app.stream_updates(stream)
+    # At this point the chunks have already been streamed to the client,
+    # so no further action required.
+    # But if you want to handle function calls in `full_message`, you can call
+    # `app.set_message(...)` again with the function result, and stream another
+    # response.
 ```
 
 ## Optional Configuration
 
-Configurations can be set using the `set_config()` function:
+Configurations can be set with the `config` global:
 ```py
-app.set_config({
-    "some_option": "some value",
-    "some_option2": "some other value",
-})
+app.config = {
+    "functions": {
+        "get_weather": {
+            "result_type": "markdown",
+        },
+        "get_stock_price": {
+            "title": "Fetching **stock price**...",
+        }
+    }
+}
 ```
 
-The following options are available:
 
-### `messages`
+### `default_messages`
 
-> Useful during development, set the app to start with some messages already in the chat.
+> Set default messages to appear whenever a new chat is created.
 
 ```py
-app.set_config({
-    "messages": [
-        { "role": "user", "content": "Hello, how are you?" },
-        { "role": "assistant", "content": "I'm doing great, how can I help you today?" },
-    ]
-})
+app.default_messages = [
+    {
+        "role": "assistant",
+        "content": "Hello, how may I assist you today?",
+    },
+]
 ```
 
 ### `functions`
 
-> Specify display headers for function/tool calls
+> Customize how function calls are displayed
 
-By default, function calls are displayed with a header, "Function call to your_function()":
+#### `functions.result_type`
+
+Change how the function result is rendered on the page.
+
+Values: `markdown` or `text` (default `text`)
+
+#### `functions.title`
+
+Set a custom title for a function.
+
+By default, function calls are displayed with a title, "Function call to `your_function()`":
 
 <img width="396" alt="Screenshot" src="https://github.com/ryayoung/ryayoung/assets/90723578/bd71eca1-9f36-40a6-94da-6bcc0fb2a5b7">
 
-The `functions` option lets you change what gets displayed here, for any functions.
-
-The text you provide is rendered as markdown.
+You can change this by setting `title`. The text you provide is rendered as markdown.
 
 ```py
-app.set_config({
+app.config = {
     "functions": {
-        "get_stock_price": "Fetching **stock price**...",
+        "get_stock_price": {
+            "title": "Fetching **stock price**...",
+        }
     }
-})
+}
 ```
 
 <img width="284" alt="Screenshot2" src="https://github.com/ryayoung/ryayoung/assets/90723578/739e6536-2148-4537-a38b-9cf797f2b190">
@@ -142,28 +138,8 @@ app.set_config({
 
 > Combine all the partial updates received from an OpenAI stream into a single message Choice.
 
-An essential tool when streaming responses from OpenAI while using function/tool calling.
-Keep a record of all the accumulated updates received during a stream, and use `concat_stream()` to combine
-them into a single message Choice.
-
-Let's rewrite our `message_handler()` function from the earlier example, to use `concat_stream()` so it can handle function calls.
-
-```py
-from gptchat.utils import concat_stream
-
-@app.handle_send_message
-def message_handler(messages):
-    stream = openai_chat_stream(messages)
-
-    id = app.new_id()
-    streamed_chunks = []
-    for chunk in stream:
-        app.update_message(chunk.delta, id=id)
-        streamed_chunks.append(chunk)
-
-    full_message = concat_stream(streamed_chunks)
-    # Do something with the full message, like handle function calls
-```
+This is done already, when you call `stream_updates()`. Use this function if you want to handle the
+stream yourself and combine the deltas afterwards.
 
 
 # Notes for Contributors

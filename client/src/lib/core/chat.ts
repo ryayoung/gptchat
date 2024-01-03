@@ -65,8 +65,6 @@ export class Chat {
         this.socket.on('connect', () => { console.log("connected"); this.connected.set(true); })
         this.socket.on('disconnect', () => { console.log("disconnected"); this.connected.set(false); })
 
-        this.connected.subscribe(connected => console.log('connected', connected))
-
         this.socket.on('error', (err: any) => this.errors.add('Server', err))
         this.socket.on('error', () => this.generating.set(false))
         this.socket.on('config', (config: any) => this.config.setAll(config))
