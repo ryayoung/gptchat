@@ -1,11 +1,16 @@
+from dataclasses import dataclass
 import os
 import time
 import inspect
 from uuid import uuid4
-from flask import Flask, send_from_directory, request
+from flask import Flask, request, abort
 from flask_socketio import SocketIO, emit
-from typing import Literal, get_args, TypedDict
-from gptchat.utils import iter_stream_choices, concat_stream
+from typing import Literal, cast, get_args, TypedDict
+from gptchat.util.openai_util import iter_stream_choices, concat_stream
+from gptchat.util.serve import (
+    get_static_responses_from_dir,
+    get_filename_target,
+)
 
 ServerChannel = Literal[
     "connect",
@@ -39,36 +44,26 @@ socketio = SocketIO(
     async_handlers=True,
 )
 
-@app.route("/", defaults={"path": "index.html"})
-@app.route("/<path:path>")
-def serve(path):
+days_to_cache = 365
+max_age = 86400 * days_to_cache
+assert app.static_folder is not None
+static_file_responses = get_static_responses_from_dir(app.static_folder, max_age)
+
+
+@app.route("/", defaults={"filename": "index.html"})
+@app.route("/<path:filename>")
+def serve(filename):
     """
     Runs when the user visits the website. Responds by sending the frontend code.
     """
     accept_encoding = request.headers.get("Accept-Encoding", "")
-    dir = app.static_folder
-    assert dir is not None
 
-    original_file = os.path.join(dir, path)
-    br_file = original_file + '.br'
-    gz_file = original_file + '.gz'
+    filename_target = get_filename_target(static_file_responses, filename, accept_encoding)
 
-    # Send compressed, if browser supports
-    if 'br' in accept_encoding and os.path.exists(br_file):
-        res = send_from_directory(dir, path + '.br')
-        res.headers['Content-Encoding'] = 'br'
-    elif 'gzip' in accept_encoding and os.path.exists(gz_file):
-        res = send_from_directory(dir, path + '.gz')
-        res.headers['Content-Encoding'] = 'gzip'
-    else:
-        res = send_from_directory(dir, path)
+    if not filename_target:
+        abort(404)
 
-    # Caching headers
-    days_to_cache = 365
-    max_age = 86400 * days_to_cache
-    res.headers['Cache-Control'] = f'max-age={max_age}, public'
-    res.headers['Expires'] = time.strftime("%a, %d-%b-%Y %H:%M:%S GMT", time.gmtime(time.time() + max_age))
-
+    res = static_file_responses[filename_target].prepare_conditional_response(request.environ)
     return res
 
 
@@ -132,7 +127,7 @@ def generating_started(to: str | None = None, **kwargs):
     return socket_emit("generating-started", to=to, **kwargs)
 
 
-def start_generating(func):
+def handle_start_generating(func):
     param_names = set(inspect.signature(func).parameters.keys())
     assert param_names == {"messages"}, (
         "Your send message handler should accept just one parameter: `messages`"
@@ -240,10 +235,8 @@ default_messages: list[dict] = []
 
 @handle_connect
 def connect():
-    if config:
-        socket_emit("config", config)
-    if default_messages:
-        socket_emit("default-messages", default_messages)
+    socket_emit("config", config)
+    socket_emit("default-messages", default_messages)
 
 
 def run_app(port: int = 5000, **kwargs):
