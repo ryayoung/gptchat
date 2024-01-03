@@ -1,5 +1,5 @@
+import * as util from '../util';
 import * as oai from './openai'
-import * as util from '$lib/util';
 import type { BinaryContentPart } from './prompt';
 
 import { 

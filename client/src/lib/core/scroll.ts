@@ -1,6 +1,5 @@
 import { tick } from 'svelte';
-import { get } from 'svelte/store';
-import * as util from '$lib/util';
+import * as util from '../util';
 
 export class AutoScroller {
     ghostDiv = util.writable<HTMLDivElement | null>(null)

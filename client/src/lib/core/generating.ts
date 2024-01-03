@@ -1,4 +1,4 @@
-import * as util from '$lib/util';
+import * as util from '../util';
 import type { Socket } from './socket';
 import type { ErrorStore } from './error';
 

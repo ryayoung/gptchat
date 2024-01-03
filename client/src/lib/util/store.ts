@@ -1,4 +1,4 @@
-import { noop } from '$lib/util';
+import { noop } from './utils';
 
 const subscriber_queue: any[] = [];
 

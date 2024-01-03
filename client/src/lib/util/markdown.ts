@@ -1,8 +1,5 @@
 import { Marked } from 'marked';
-// import { Marked } from "https://cdn.jsdelivr.net/npm/marked/marked.min.js";
 import hljs from 'highlight.js';
-// declare const hljs: any;
-// declare const marked: any;
 
 type HighlightedCode = {
     language: string
