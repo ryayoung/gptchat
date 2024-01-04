@@ -60,3 +60,57 @@ export function objectFromKeyedRecords<
 export function refillArray<T>(array: T[], replacement: T[]): void {
     array.splice(0, array.length, ...replacement);
 }
+
+
+
+/**
+ * Given a potentially incomplete json string that could terminate at any character,
+ * return a dict that includes all fully-complete key/value pairs from the string.
+ *
+ * Assumes that the string begins with valid json (i.e. an object or array) and only
+ * may otherwise be invalid due to being incomplete. This function finds the point at
+ * which the last valid, complete, key/value pair ends, and replaces the rest of the
+ * string with the given `end_bracket`.
+ */
+export function parseIncompleteJson(
+    string: string,
+    endBracket: "}" | "]" = "}"
+): { [key: string]: any } | null {
+    try {
+        return JSON.parse(string);
+    } catch (e) { }
+
+    let idx = string.length;
+
+    while (idx > 0) {
+        idx = string.lastIndexOf(",", idx - 1);
+
+        if (idx === -1) {
+            try {
+                return JSON.parse(string + endBracket);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        try {
+            return JSON.parse(string.slice(0, idx) + endBracket);
+        } catch (e) { }
+    }
+
+    return null;
+}
+
+
+export function wrapInMarkdownCodeBlock(code: string, language: string = ''): string {
+    return '```' + language + '\n' + code + '\n```';
+}
+
+
+export function prettifyJsonString(s: string): string {
+    try {
+        return JSON.stringify(JSON.parse(s), null, 2)
+    } catch (e) {
+        return s;
+    }
+}

@@ -100,7 +100,8 @@
 .dark .markdown-body {
     --color-fg-default: hsl(var(---text-primary));
     --color-canvas-default: hsl(var(---surface-primary));
-    --color-canvas-subtle: hsl(var(---black), .25);
+    --color-canvas-subtle: hsl(var(---black), .3);
+    --color-border-default: hsl(var(---border), .15);
 }
 
 

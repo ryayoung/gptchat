@@ -71,17 +71,52 @@ def start_generating(messages):
 
 ## Optional Configuration
 
-Configurations can be set with the `config` global:
+### `config`
+
+Configurations can be set with the `config` global.
+
 ```py
 app.config = {
     "functions": {
-        "get_weather": {
-            "result_type": "markdown",
-        },
         "get_stock_price": {
-            "title": "Fetching **stock price**...",
+            "header": {
+                "text": "Getting stock price...",
+            },
+            "result": {
+                "type": "html",
+            }
         }
     }
+}
+```
+
+#### Available config options
+- Using typescript here, to better represent the type of your dictionary.
+(The `?` means optional, and `[key: string]` means any keys of your choice, like function names)
+
+```ts
+type Config = {
+  functions: {
+    [key: string]: {
+      header?: {
+        text?: string  // Customize the display text. Rendered as markdown
+        show?: boolean  // Hide the header completely. No status indicator or display text
+      },
+      arguments?: {
+        show_key_as_code?: {  // Show only the value of a specific key, as a code block
+          key: string
+          language: string
+        },
+        title?: string  // The text shown above arguments. Rendered as markdown
+      },
+      result?: {
+        title?: string  // The text shown above result. Rendered as markdown.
+        // If 'type' is passed, but is not one of these options, it's assumed to be
+        // a language prefix (i.e. 'json'), and the result will be rendered as a code block
+        type?: 'text' | 'markdown' | 'html' | string
+      }
+    }
+  }
 }
 ```
 
@@ -98,38 +133,6 @@ app.default_messages = [
     },
 ]
 ```
-
-### `functions`
-
-> Customize how function calls are displayed
-
-#### `functions.result_type`
-
-Change how the function result is rendered on the page.
-
-Values: `markdown` or `text` (default `text`)
-
-#### `functions.title`
-
-Set a custom title for a function.
-
-By default, function calls are displayed with a title, "Function call to `your_function()`":
-
-<img width="396" alt="Screenshot" src="https://github.com/ryayoung/ryayoung/assets/90723578/bd71eca1-9f36-40a6-94da-6bcc0fb2a5b7">
-
-You can change this by setting `title`. The text you provide is rendered as markdown.
-
-```py
-app.config = {
-    "functions": {
-        "get_stock_price": {
-            "title": "Fetching **stock price**...",
-        }
-    }
-}
-```
-
-<img width="284" alt="Screenshot2" src="https://github.com/ryayoung/ryayoung/assets/90723578/739e6536-2148-4537-a38b-9cf797f2b190">
 
 
 ## Utilities

@@ -1,3 +1,4 @@
+import { tick } from 'svelte';
 import * as util from '../util';
 import type { FileContentPart, SerializedPrompt } from './prompt';
 import type { ConfigStore, FunctionResultType, SerializedConfigStore } from './config';
@@ -84,10 +85,12 @@ export class Chat {
         this.messages.subscribe(() => this.setMessagesIfDefault())
 
         this.messages.subscribe(({ mapping, order }) => {
-            this.rendered.set(
-                renderMessages(mapping, order)
-            )
-            this.scroll.scroll('auto');
+            tick().then(() => {
+                this.rendered.set(
+                    renderMessages(mapping, order)
+                )
+                this.scroll.scroll('auto');
+            })
         })
     }
 
@@ -185,28 +188,60 @@ export class Chat {
         return util.toMarkdownWrappedCode(text);
     }
 
-    renderFunctionCallMarkdown(text: string) {
-        return util.toMarkdownWrappedCode(text);
-    }
-
-    renderFunctionCallArgs(args: string | null | undefined): string {
-        if (!args) return '';
-        let content: string;
-        try {
-            content = JSON.stringify(JSON.parse(args), null, 2)
-        } catch (e) {
-            content = args;
+    renderFunctionResult(result: string | null, name: string, functions: typeof this.config._.functions): string | null {
+        if (result === null) return null;
+        const result_type = functions[name]?.result?.type;
+        if (!result_type) return result;
+        switch (result_type) {
+            case 'markdown':
+                return util.toMarkdownWrappedCode(result)
+            case 'html':
+                return result
+            case 'text':
+                return result
+            case 'json':
+                return util.toMarkdown(util.wrapInMarkdownCodeBlock(util.prettifyJsonString(result), 'json'));
+            default:
+                return util.toMarkdown(util.wrapInMarkdownCodeBlock(result, result_type));
         }
-        return util.toMarkdown("```json\n" + content + "\n```");
     }
 
-    renderFunctionTitle(name: string, functions: typeof this.config._.functions): string {
-        const title = functions[name]?.title;
-        return util.toMarkdown(title ?? `Function call to **\`${name}()\`**`)
+    renderFunctionCallArgs(args: string | null | undefined, name: string, functions: typeof this.config._.functions): string {
+        if (!args) return '';
+        const showKeyAsCode = functions[name]?.arguments?.show_key_as_code;
+        if (showKeyAsCode && showKeyAsCode.key) {
+
+            const key = showKeyAsCode.key;
+            const language = showKeyAsCode.language ?? 'plaintext';
+            const parsed = util.parseIncompleteJson(args);
+
+            if (parsed && parsed[key]) {
+                const value = parsed[key];
+                const content = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+                return util.toMarkdown(util.wrapInMarkdownCodeBlock(content, language));
+            }
+        }
+        return util.toMarkdown(util.wrapInMarkdownCodeBlock(util.prettifyJsonString(args), 'json'));
+    }
+
+    getArgsTitle(name: string, functions: typeof this.config._.functions): string {
+        const title = functions[name]?.arguments?.title;
+        return util.toMarkdown(title ?? 'Arguments');
+    }
+
+    getResultTitle(name: string, functions: typeof this.config._.functions): string {
+        const title = functions[name]?.result?.title;
+        return util.toMarkdown(title ?? 'Result');
+    }
+
+    renderFunctionHeader(name: string, functions: typeof this.config._.functions): string | null {
+        const header = functions[name]?.header;
+        if (header?.show === false) return null;
+        return util.toMarkdown(header?.text ?? `Function call to **\`${name}()\`**`)
     }
 
     getFunctionResultType(name: string, functions: typeof this.config._.functions): FunctionResultType {
-        return functions[name]?.result_type ?? 'text';
+        return functions[name]?.result?.type ?? 'text';
     }
 
     getFunctionCallStatus(result: string | null, generating: boolean): FunctionCallStatus {

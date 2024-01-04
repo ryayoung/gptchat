@@ -5,56 +5,69 @@ import BangIcon from './icon/Bang.svelte';
 import ChevronIcon from './icon/Chevron.svelte';
 import CodiconLoading from './icon/CodiconLoading.svelte';
 export let progressMode: string;
-export let title: string;
+export let header: string | null;
 export let args: string;
+export let argsTitle: string;
 export let result: string | null;
-export let generating: boolean;
+export let resultTitle: string;
 export let resultType: FunctionResultType;
-export let markdownRenderer: (markdown: string) => string;
+export let generating: boolean;
 
 let open: boolean = generating ? true : true;
 </script>
 
-<div class="tab  flex items-center gap.625">
-    <div class="indicator-container  relative">
-        <div class="indicator {progressMode}  flex-center full rounded">
-            {#if progressMode === 'error'}
-                <BangIcon/>
-            {:else if progressMode === 'progress'}
-                <CodiconLoading style="height: 1.25rem; width: 1.25rem;"/>
-            {:else}
-                <CheckIcon/>
-            {/if}
+{#if header !== null}
+    <div class="header  flex items-center gap.625">
+        <div class="indicator-container  relative">
+            <div class="indicator {progressMode}  flex-center full rounded">
+                {#if progressMode === 'error'}
+                    <BangIcon/>
+                {:else if progressMode === 'progress'}
+                    <CodiconLoading style="height: 1.25rem; width: 1.25rem;"/>
+                {:else}
+                    <CheckIcon/>
+                {/if}
+            </div>
+        </div>
+        <div class="label-container  relative w-full">
+            <button class="label  flex items-center gap.25" on:click={() => open = !open}>
+                <div class="markdown-body function-status selectable-text-deep">
+                    {@html header}
+                </div>
+                <ChevronIcon {open}/>
+            </button>
         </div>
     </div>
-    <div class="label-container  relative w-full">
-        <button class="label  flex items-center gap.25" on:click={() => open = !open}>
-            <div class="markdown-body function-status selectable-text-deep">
-                {@html title}
-            </div>
-            <ChevronIcon {open}/>
-        </button>
-    </div>
-</div>
-{#if open}
+{/if}
+{#if open || header === null}
     <div class="content  overflow-hidden">
         {#if args}
-            <div class="header  text-xs">Arguments</div>
-            <div class="markdown-body arguments selectable-text-deep">
+            <div class="title args  text-xs">{@html argsTitle}</div>
+            <div class="horizontal-divider"></div>
+            <div class="markdown-body selectable-text-deep">
                 {@html args}
             </div>
         {/if}
-        {#if result}
-            <div class="footer">
-                <div class="title  text-xs">Result</div>
-                {#if resultType === 'text'}
+        {#if result !== null}
+            <div class="horizontal-divider"></div>
+            {#if resultType === 'text'}
+                <div class="text-result-wrapper">
+                    <div class="title text-result  text-xs">{@html resultTitle}</div>
                     <pre class="result selectable-text">{result}</pre>
-                {:else if resultType === 'markdown'}
-                    <div class="markdown-body selectable-text-deep">
-                        {@html markdownRenderer(result)}
+                </div>
+            {:else}
+                <div class="title block-result  text-xs">{@html resultTitle}</div>
+                <div class="horizontal-divider"></div>
+                {#if resultType === 'html'}
+                    <div class="html-result">
+                        {@html result}
+                    </div>
+                {:else}
+                    <div class="markdown-body markdown-result selectable-text-deep">
+                        {@html result}
                     </div>
                 {/if}
-            </div>
+            {/if}
         {/if}
     </div>
 {/if}
@@ -62,8 +75,11 @@ let open: boolean = generating ? true : true;
 <style lang="scss">
 @import '../styles/pre.scss';
 
-.tab {
-    margin-bottom: .625rem;
+:global(pre.markdown-code-block.plain) {
+    border-radius: 0;
+}
+
+.header {
     margin-top: .625rem;
 }
 
@@ -103,26 +119,41 @@ button.label {
 }
 
 .content {
-    margin: .125rem 0 .75rem 0;
+    margin: .75rem 0 .75rem 0;
     border-radius: .75rem;
     border: 1px solid color($border, .2);
 }
 
-.header {
-    padding: .5rem 1rem;
-}
+.title {
+    &.args, &.block-result {
+        padding: .5rem 1rem;
+    }
 
-.markdown-body.arguments {
-    border-top: 1px solid color($border, .2);
-    border-bottom: 1px solid color($border, .2);
-}
+    &.block-result {
+        background-color: color($black, 0.08);
+    }
 
-.footer {
-    padding: 1rem;
-    overflow: auto;
-
-    .title {
+    &.text-result {
         margin-bottom: .5rem;
     }
+
+}
+
+.horizontal-divider {
+    border-top: 1px solid color($border, .2);
+}
+
+.text-result-wrapper {
+    padding: .75rem 1rem 1rem 1rem;
+    overflow: auto;
+}
+
+.markdown-body.markdown-result {
+    max-height: 25rem;
+    overflow: auto;
+}
+
+.html-result {
+    overflow: auto;
 }
 </style>

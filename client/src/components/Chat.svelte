@@ -21,6 +21,9 @@ const { text: promptText, files: promptFiles, images: promptImages } = chat.prom
 const { connected, scroll, errors, rendered, generating, config } = chat;
 const { containerDiv, ghostDiv, handleUserScrollDebounced } = scroll;
 
+let agentName: string;
+$: agentName = $config.agent?.name ?? 'Assistant';
+
 setTimeout(() => scroll.scroll('force'))
 </script>
 
@@ -37,7 +40,7 @@ setTimeout(() => scroll.scroll('force'))
             {/if}
         </div>
         {#each $rendered as response, idx}
-            <ResponseWrapper type={response.type}>
+            <ResponseWrapper type={response.type} {agentName}>
                 {#if response.type === 'user'}
                     <UserResponse
                         id={response.id}
@@ -56,12 +59,13 @@ setTimeout(() => scroll.scroll('force'))
                             {:else}
                                 <AgentToolCallPart
                                     progressMode={chat.getFunctionCallStatus(part.result, $generating)}
-                                    title={chat.renderFunctionTitle(part.name, $config.functions)}
-                                    args={chat.renderFunctionCallArgs(part.arguments)}
-                                    result={part.result}
-                                    generating={$generating}
+                                    header={chat.renderFunctionHeader(part.name, $config.functions)}
+                                    args={chat.renderFunctionCallArgs(part.arguments, part.name, $config.functions)}
+                                    argsTitle={chat.getArgsTitle(part.name, $config.functions)}
+                                    result={chat.renderFunctionResult(part.result, part.name, $config.functions)}
+                                    resultTitle={chat.getResultTitle(part.name, $config.functions)}
                                     resultType={chat.getFunctionResultType(part.name, $config.functions)}
-                                    markdownRenderer={chat.renderFunctionCallMarkdown}
+                                    generating={$generating}
                                 />
                             {/if}
                         {/each}

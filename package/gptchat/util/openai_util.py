@@ -1,4 +1,4 @@
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Literal
 import json
 from json import JSONDecodeError
 from openai import Stream
@@ -9,12 +9,18 @@ from openai.types.chat.chat_completion_message_tool_call import Function, ChatCo
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 
-def parse_incomplete_json(string: str) -> dict:
+def parse_incomplete_json(
+    string: str,
+    end_bracket: Literal["}", "]"] = "}",
+) -> dict:
     """
     Given a potentially incomplete json string that could terminate at any character,
     return a dict that includes all fully-complete key/value pairs from the string.
 
-    Assumes that only the last key/value pair in the string may be incomplete.
+    Assumes that the string begins with valid json (i.e. an object or array) and only
+    may otherwise be invalid due to being incomplete. This function finds the point at
+    which the last valid, complete, key/value pair ends, and replaces the rest of the
+    string with the given `end_bracket`.
     """
     try:
         return json.loads(string)
@@ -26,12 +32,12 @@ def parse_incomplete_json(string: str) -> dict:
 
         if idx == -1:
             try:
-                return json.loads(string + "}")
+                return json.loads(string + end_bracket)
             except JSONDecodeError:
                 return {}
 
         try:
-            return json.loads(string[:idx] + "}")
+            return json.loads(string[:idx] + end_bracket)
         except JSONDecodeError:
             continue
 
