@@ -1,12 +1,13 @@
 <script lang="ts">
 export let type: 'user' | 'agent';
+export let agentName: string;
 </script>
 
 <div class="chat-container  w-full">
     <div class="chat  flex gap.75 mx-auto">
         <div class="avatar {type}  flex-center rounded overflow-hidden"/>
         <div class="message-container  flex-col relative w-full">
-            <div class="name">{type === 'user' ? 'You' : 'Assistant'}</div>
+            <div class="name">{type === 'user' ? 'You' : agentName}</div>
             <div class="sections-container">
 
                 <slot/>

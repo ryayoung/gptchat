@@ -4,26 +4,65 @@ export type ConfigTypes = {
     functions: {
         validated: RecordOf<FunctionConfig>
         input: RecordOf<FunctionInputConfig>
+    },
+    agent: {
+        validated: AgentConfig
+        input: AgentConfigInput
     }
 };
 
+export type AgentConfig = {
+    name?: string
+}
+export type AgentConfigInput = {
+    name?: string
+}
+
 export type SerializedConfigStore = {
     functions: ConfigTypes['functions']['validated']
+    agent: ConfigTypes['agent']['validated']
 }
 
 export type ConfigInput = {
     functions?: ConfigTypes['functions']['input']
+    agent?: ConfigTypes['agent']['input']
 }
 
-export type FunctionResultType = 'text' | 'markdown';
+export type FunctionResultType = 'text' | 'markdown' | 'html' | string;
 
 export type FunctionConfig = {
-    title?: string
-    result_type?: FunctionResultType
+    header?: {
+        text?: string
+        show?: boolean
+    },
+    arguments?: {
+        show_key_as_code?: {
+            key: string
+            language: string
+        },
+        title?: string
+    },
+    result?: {
+        title?: string
+        type?: FunctionResultType
+    }
 }
 export type FunctionInputConfig = {
-    title?: string
-    result_type?: string
+    header?: {
+        text?: string
+        show?: boolean
+    },
+    arguments?: {
+        show_key_as_code?: {
+            key: string
+            language: string
+        },
+        title?: string
+    },
+    result?: {
+        title?: string
+        type?: FunctionResultType
+    }
 }
 
 type ProcessorFunctions = {
@@ -35,18 +74,41 @@ function process<T extends keyof ConfigTypes>(name: T, config: ConfigTypes[T]['i
 }
 
 const configProcessors: ProcessorFunctions = {
+    agent(input) {
+        if (!input) {
+            return {};
+        }
+        return {
+            name: input.name,
+        }
+    },
     functions(input) {
         if (!input) {
             return {};
         }
         return Object.entries(input).reduce((acc, [name, conf]) => {
             const res: FunctionConfig = {};
-            const { title, result_type } = conf;
-            if (title) {
-                res.title = title;
+            const { header, result, arguments: args } = conf;
+            if (header) {
+                res.header = {
+                    text: header.text,
+                    show: header.show,
+                };
             }
-            if (result_type === 'markdown' || result_type === 'text') {
-                res.result_type = result_type;
+            if (args) {
+                res.arguments = {};
+                if (args.show_key_as_code?.key && args.show_key_as_code?.language) {
+                    res.arguments.show_key_as_code = args.show_key_as_code;
+                }
+                if (args.title) {
+                    res.arguments.title = args.title;
+                }
+            }
+            if (result) {
+                res.result = {
+                    title: result.title,
+                    type: result.type,
+                };
             }
             acc[name] = res;
             return acc;
@@ -56,6 +118,7 @@ const configProcessors: ProcessorFunctions = {
 
 const defaultConfig: SerializedConfigStore = {
     functions: {},
+    agent: {},
 }
 
 
@@ -66,7 +129,7 @@ export type ConfigStore = util.Writable<SerializedConfigStore> & {
 
 export function createConfigStore() {
     const obj: ConfigStore = {
-        ...util.writable({ functions: {} }),
+        ...util.writable({ ...defaultConfig }),
         setAll(config) {
             this.update(s => {
                 for (const key in configProcessors) {
