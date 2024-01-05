@@ -5,6 +5,7 @@ import {
     createDarkModeStore,
     Chat,
     type SerializedChat,
+	type PartialMessageAnyRole,
 } from './lib/core';
 import { debounce, localStorageGet, localStorageSet } from './lib/util';
 
@@ -19,7 +20,6 @@ const PROD = true;
 const BASE_URL = PROD ? '' : 'http://127.0.0.1:5004';
 
 const socket = new Socket(BASE_URL, { transports: ['websocket'] });
-socket.on("connect", () => console.log("CONNECTED"));
 
 const darkMode = createDarkModeStore();
 const chat = new Chat(socket);
@@ -34,7 +34,7 @@ const saveState = debounce(() => {
     setTimeout(() => {
         localStorageSet('chat', chat.serialize());
     })
-}, 500);
+}, 1000);
 
 chat.messages.subscribe(saveState);
 chat.prompt.files.subscribe(saveState);
@@ -44,7 +44,157 @@ chat.errors.subscribe(saveState);
 chat.config.subscribe(saveState);
 
 
-// chat.handleSetAllEvent([
+// const startingMessages: PartialMessageAnyRole[] = [
+//     {
+//         "role": "user",
+//         "content": "1",
+//     },
+//     {
+//         "role": "assistant",
+//         "content": "2",
+//     },
+//     {
+//         "role": "user",
+//         "content": "3",
+//     },
+//     {
+//         "role": "assistant",
+//         "content": null,
+//         "tool_calls": [
+//             {
+//                 'id': '1',
+//                 'type': 'function',
+//                 'function': {
+//                     'name': 'run_python',
+//                     'arguments': '{"code": "4"}',
+//                 }
+//             }
+//         ]
+//     },
+//     {
+//         "role": "tool",
+//         "content": "5",
+//         "tool_call_id": "1",
+//     },
+//     {
+//         "role": "assistant",
+//         "content": "6",
+//     },
+//     {
+//         "role": "user",
+//         "content": "7",
+//     },
+//     {
+//         "role": "assistant",
+//         "content": "8",
+//         "tool_calls": [
+//             {
+//                 "id": "2",
+//                 "type": "function",
+//                 "function": {
+//                     "name": "run_python",
+//                     "arguments": '{"code": "8"}',
+//                 }
+//             }
+//         ]
+//     },
+//     {
+//         "role": "tool",
+//         "content": "9",
+//         "tool_call_id": "2",
+//     },
+//     {
+//         "role": "assistant",
+//         "content": "10",
+//     },
+//     {
+//         "role": "user",
+//         "content": "11",
+//     },
+//     {
+//         "role": "assistant",
+//         "content": "12",
+//         "tool_calls": [
+//             {
+//                 "id": "3",
+//                 "type": "function",
+//                 "function": {
+//                     "name": "query_sql",
+//                     "arguments": '{"q": "12"}',
+//                 }
+//             }
+//         ]
+//     },
+//     {
+//         "role": "tool",
+//         "content": '13',
+//         "tool_call_id": "3",
+//     },
+//     {
+//         "role": "assistant",
+//         "content": "14",
+//     },
+//     {
+//         "role": "user",
+//         "content": "15",
+//     },
+//     {
+//         "role": "assistant",
+//         "content": "16",
+//         "tool_calls": [
+//             {
+//                 "id": "5",
+//                 "type": "function",
+//                 "function": {
+//                     "name": "create_plotly_chart",
+//                     "arguments": '',
+//                 }
+//             }
+//         ]
+//     },
+//     {
+//         "role": "tool",
+//         "content": '17',
+//         "tool_call_id": "5",
+//     },
+//     {
+//         "role": "assistant",
+//         "content": "18",
+//     },
+//     {
+//         "role": "user",
+//         "content": "19",
+//     },
+//     {
+//         "role": "assistant",
+//         "content": "20",
+//         "tool_calls": [
+//             {
+//                 "id": "4",
+//                 "type": "function",
+//                 "function": {
+//                     "name": "query_neo4j",
+//                     "arguments": '{"q": "20"}',
+//                 }
+//             }
+//
+//         ]
+//     },
+//     {
+//         "role": "tool",
+//         'content': "21",
+//         'tool_call_id': '4',
+//     },
+//     {
+//         'role': "assistant",
+//         'content': "22"
+//     }
+// ]
+
+// chat.handleSetAllEvent(startingMessages);
+// chat.defaultMessages.set(startingMessages);
+
+// const startingMessages: PartialMessageAnyRole[] = [
 //     {
 //         "role": "user",
 //         "content": "In Python, how do you execute a string as code and record the printed output?",
@@ -189,8 +339,12 @@ chat.config.subscribe(saveState);
 //         'role': "assistant",
 //         'content': "This query finds all `Person` nodes directly connected to the `Person` node named 'Alice' through a `KNOWS` relationship. It returns the names of these people and the 'since' property of the `KNOWS` relationship, which presumably represents how long Alice has known these people."
 //     }
-// ])
 //
+// ]
+
+// chat.handleSetAllEvent(startingMessages);
+// chat.defaultMessages.set(startingMessages);
+
 // chat.config.setAll({
 //     "functions": {
 //         "run_python": {
@@ -343,5 +497,4 @@ chat.config.subscribe(saveState);
 // })
 
 </script>
-
 <svelte:component this={ChatComponent} {chat}/>
