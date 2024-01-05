@@ -2,6 +2,7 @@
 	"useTabs": true,
 	"singleQuote": true,
 	"tabWidth": 4,
+    "semi": false,
 	"trailingComma": "es5",
 	"svelteIndentScriptAndStyle": false,
 	"svelteBracketNewLine": true,
