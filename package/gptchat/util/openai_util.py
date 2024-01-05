@@ -119,6 +119,7 @@ def concat_stream(
         index=0,
         message=msg,
         finish_reason=finish_reason,
+        logprobs=None,
     )
 
 
