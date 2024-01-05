@@ -66,7 +66,8 @@ export const messageFromOpenai: MessageFromOpenaiConverters = {
 
         if (tool_calls) {
             for (const call of tool_calls) {
-                if (!(call.id && call.function?.name && call.function?.arguments)) {
+                if (!(call.id && call.function?.name && typeof call.function?.arguments === 'string')) {
+                    log('Message has invalid tool call. Skipping:', msg)
                     return null;
                 }
             }
