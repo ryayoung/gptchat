@@ -4,16 +4,19 @@ import CheckIcon from './icon/Check.svelte';
 import BangIcon from './icon/Bang.svelte';
 import ChevronIcon from './icon/Chevron.svelte';
 import CodiconLoading from './icon/CodiconLoading.svelte';
-export let progressMode: string;
-export let header: string | null;
-export let args: string;
-export let argsTitle: string;
-export let result: string | null;
-export let resultTitle: string;
-export let resultType: FunctionResultType;
-export let generating: boolean;
 
-let open: boolean = generating ? true : true;
+let { progressMode, header, args, argsTitle, result, resultTitle, resultType, generating } = $props<{
+    progressMode: string;
+    header: string | null;
+    args: string;
+    argsTitle: string;
+    result: string | null;
+    resultTitle: string;
+    resultType: FunctionResultType;
+    generating: boolean;
+}>();
+
+let open: boolean = $state(generating ? true : true);
 </script>
 
 {#if header !== null}
@@ -30,7 +33,7 @@ let open: boolean = generating ? true : true;
             </div>
         </div>
         <div class="label-container  relative w-full">
-            <button class="label  flex items-center gap.25" on:click={() => open = !open}>
+            <button class="label  flex items-center gap.25" onclick={() => open = !open}>
                 <div class="markdown-body function-status selectable-text-deep">
                     {@html header}
                 </div>
@@ -44,7 +47,7 @@ let open: boolean = generating ? true : true;
         {#if args}
             <div class="title args  text-xs">{@html argsTitle}</div>
             <div class="horizontal-divider"></div>
-            <div class="markdown-body selectable-text-deep">
+            <div class="markdown-body args selectable-text-deep">
                 {@html args}
             </div>
         {/if}
@@ -75,7 +78,7 @@ let open: boolean = generating ? true : true;
 <style lang="scss">
 @import '../styles/pre.scss';
 
-:global(pre.markdown-code-block.plain) {
+:global(.markdown-body.args pre.markdown-code-block.plain) {
     border-radius: 0;
 }
 

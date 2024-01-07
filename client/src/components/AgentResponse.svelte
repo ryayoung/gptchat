@@ -1,19 +1,21 @@
 <script lang="ts">
-import { createEventDispatcher } from 'svelte';
 import RefreshIcon from './icon/Refresh.svelte';
-const dispatch = createEventDispatcher();
+let { regenerate, children } = $props<{
+    regenerate: () => void,
+    children: any
+}>();
 
 </script>
 
 <div class="sections-container">
     <div class="content-container  flex-col">
-        <slot/>
+        {@render children()}
     </div>
     <div class="controls  flex gap.25">
         <div class="buttons-container">
-            <button on:click={() => dispatch('regenerate')}>
+            <button onclick={regenerate}>
                 <div class="icon-wrapper  flex items-center gap.375 text-xs">
-                    <RefreshIcon/>
+                    <RefreshIcon />
                 </div>
             </button>
         </div>

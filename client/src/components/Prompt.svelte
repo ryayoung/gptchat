@@ -1,12 +1,17 @@
 <script lang="ts">
-import { createEventDispatcher } from 'svelte';
-const dispatch = createEventDispatcher();
 import TextArea from './TextArea.svelte';
 import SendIcon from './icon/Send.svelte';
 import FileUploadIcon from './icon/FileUpload.svelte';
 
-export let text: string;
-export let generating: boolean;
+let { text, generating, onchange, onsubmit, onupload, onstop, children } = $props<{
+    text: string
+    generating: boolean
+    onchange: (value: string) => void
+    onsubmit: () => void
+    onupload: () => void
+    onstop: () => void
+    children: any
+}>()
 
 setTimeout(() => textArea?.focus(), 50);
 
@@ -16,26 +21,26 @@ let textArea: TextArea;
 <div class="prompt-container  flex justify-center w-full">
     <form class="prompt  flex-col relative w-full">
 
-        <slot/>
+        {@render children()}
 
         <TextArea
             bind:this={textArea}
             value={text}
-            on:customchange={(e) => dispatch('customchange', e.detail)}
+            {onchange}
+            {onsubmit}
             placeholder="Send a message..."
-            on:submit={() => dispatch('submit')}
             maxHeight={200}
             style="height: 3.25rem; padding: .875rem 3rem .875rem 3rem;"
         />
-        <button class="upload-btn  bottom-left" on:click={() => dispatch('upload')}>
+        <button class="upload-btn  bottom-left" type=button onclick={onupload}>
             <FileUploadIcon/>
         </button>
         {#if generating}
-            <button class="stop-btn  bottom-right rounded" on:click={() => dispatch('stop')}>
+            <button class="stop-btn  bottom-right rounded" type=button onclick={onstop}>
                 <div class="square"/>
             </button>
         {:else}
-            <button class="send-btn  flex-center bottom-right" class:dimmed={text === ''} on:click={() => dispatch('submit')}>
+            <button class="send-btn  flex-center bottom-right" type=button class:dimmed={text === ''} onclick={onsubmit}>
                 <SendIcon/>
             </button>
         {/if}

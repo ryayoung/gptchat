@@ -74,6 +74,7 @@ function process<T extends keyof ConfigTypes>(name: T, config: ConfigTypes[T]['i
 }
 
 const configProcessors: ProcessorFunctions = {
+
     agent(input) {
         if (!input) {
             return {};
@@ -82,6 +83,7 @@ const configProcessors: ProcessorFunctions = {
             name: input.name,
         }
     },
+
     functions(input) {
         if (!input) {
             return {};

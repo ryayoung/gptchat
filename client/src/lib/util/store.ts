@@ -1,97 +1,92 @@
-import { noop } from './utils';
-
-const subscriber_queue: any[] = [];
+import { noop } from './utils'
 
 export function safe_not_equal(a: any, b: any) {
-	return a !== a ? b === b : a !== b || (a && typeof a === 'object') || typeof a === 'function';
+	return a !== a ? b === b : a !== b || (a && typeof a === 'object') || typeof a === 'function'
 }
 
+const subscriber_queue: any[] = []
+
 /** Cleanup logic callback. */
-export type Invalidator<T> = (value?: T) => void;
+export type Invalidator<T> = (value?: T) => void
 
 /** Pair of subscriber and invalidator. */
-export type SubscribeInvalidateTuple<T> = [Subscriber<T>, Invalidator<T>];
+export type SubscribeInvalidateTuple<T> = [Subscriber<T>, Invalidator<T>]
 
 /** Callback to inform of a value updates. */
-export type Subscriber<T> = (value: T) => void;
+export type Subscriber<T> = (value: T) => void
 
 /** Unsubscribes from value updates. */
-export type Unsubscriber = () => void;
+export type Unsubscriber = () => void
 
 /** Callback to update a value. */
-export type Updater<T> = (value: T) => T;
+export type Updater<T> = (value: T) => T
 
 /**
  * Start and stop notification callbacks.
  * This function is called when the first subscriber subscribes.
  */
-export type StartStopNotifier<T> = (
-	set: (value: T) => void,
-	update: (fn: Updater<T>) => void
-) => void | (() => void);
-
+export type StartStopNotifier<T> = (set: (value: T) => void, update: (fn: Updater<T>) => void) => void | (() => void)
 
 /** Writable interface for both updating and subscribing. */
 export interface Writable<T> {
 	/** Set value and inform subscribers. */
-    _: T,
-	set(this: void, value: T): void;
+	get(): T
+	set(this: void, value: T): void
 	/** Update value using callback and inform subscribers. */
-	update(this: void, updater: Updater<T>): void;
-	subscribe(this: void, run: Subscriber<T>, invalidate?: Invalidator<T>): Unsubscriber;
+	update(this: void, updater: Updater<T>): void
+	subscribe(this: void, run: Subscriber<T>, invalidate?: Invalidator<T>): Unsubscriber
 }
 
-export function writable<T>(_: T, start: StartStopNotifier<T> = noop): Writable<T> {
+export function writable<T>(value: T, start: StartStopNotifier<T> = noop): Writable<T> {
+	let stop: Unsubscriber | null
 
-	let stop: Unsubscriber | null;
-
-	const subscribers: Set<SubscribeInvalidateTuple<T>> = new Set();
+	const subscribers: Set<SubscribeInvalidateTuple<T>> = new Set()
 
 	function set(new_value: T): void {
-		if (safe_not_equal(_, new_value)) {
-			_ = new_value;
+		if (safe_not_equal(value, new_value)) {
+			value = new_value
 			if (stop) {
 				// store is ready
-				const run_queue = !subscriber_queue.length;
+				const run_queue = !subscriber_queue.length
 				for (const subscriber of subscribers) {
-					subscriber[1]();
-					subscriber_queue.push(subscriber, _);
+					subscriber[1]()
+					subscriber_queue.push(subscriber, value)
 				}
 				if (run_queue) {
 					for (let i = 0; i < subscriber_queue.length; i += 2) {
-						subscriber_queue[i][0](subscriber_queue[i + 1]);
+						subscriber_queue[i][0](subscriber_queue[i + 1])
 					}
-					subscriber_queue.length = 0;
+					subscriber_queue.length = 0
 				}
 			}
 		}
 	}
 
 	function update(fn: Updater<T>): void {
-		set(fn(_));
+		set(fn(value))
 	}
 
 	function subscribe(run: Subscriber<T>, invalidate: Invalidator<T> = noop): Unsubscriber {
-
-		const subscriber: SubscribeInvalidateTuple<T> = [run, invalidate];
-		subscribers.add(subscriber);
+		const subscriber: SubscribeInvalidateTuple<T> = [run, invalidate]
+		subscribers.add(subscriber)
 
 		if (subscribers.size === 1) {
-			stop = start(set, update) || noop;
+			stop = start(set, update) || noop
 		}
 
-		run(_);
+		run(value)
 		return () => {
-			subscribers.delete(subscriber);
+			subscribers.delete(subscriber)
 			if (subscribers.size === 0 && stop) {
-				stop();
-				stop = null;
+				stop()
+				stop = null
 			}
-		};
+		}
 	}
-    const obj = { _, set, update, subscribe }
 
-    obj.subscribe(val => obj._ = val);
+	function get() {
+		return value
+	}
 
-    return obj;
+	return { get, set, update, subscribe }
 }

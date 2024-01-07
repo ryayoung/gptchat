@@ -1,6 +1,4 @@
 import * as util from '../util';
-import type { Socket } from './socket';
-import type { ErrorStore } from './error';
 
 export type GeneratingStore = util.Writable<boolean> & { 
 };

@@ -11,27 +11,31 @@ import ImageFile from './ImageFile.svelte';
 import PencilNewIcon from './icon/PencilNew.svelte';
 import CodiconLoading from './icon/CodiconLoading.svelte';
 
-export let chat: Chat;
-
-function handleUserMessageSubmit(e: CustomEvent<{ text: string, id: string }>) {
-    chat.changeUserMessageAndSubmit(e.detail.id, e.detail.text);
-}
+let { chat } = $props<{ chat: Chat }>();
 
 const { text: promptText, files: promptFiles, images: promptImages } = chat.prompt;
 const { connected, scroll, errors, rendered, generating, config } = chat;
-const { containerDiv, ghostDiv, handleUserScrollDebounced } = scroll;
+const { containerDiv, handleUserScrollDebounced } = scroll;
 
-let agentName: string;
-$: agentName = $config.agent?.name ?? 'Assistant';
+let agentName: string = $derived($config.agent?.name ?? 'Assistant');
 
 setTimeout(() => scroll.scroll('force'))
 </script>
 
+
 <div class="container  flex-col">
-    <div class="chats  flex-col relative full scroll-y" bind:this={$containerDiv} on:scroll={handleUserScrollDebounced}>
+    {#snippet userResponse({ id, content, generating })}
+        <UserResponse
+            contentText={chat.userContentToText(content)}
+            contentFiles={chat.userContentToFiles(content)}
+            {generating}
+            onsubmit={text => chat.changeUserMessageAndSubmit(id, text)}
+        />
+    {/snippet}
+    <div class="chats  flex-col relative full scroll-y" bind:this={$containerDiv} onscroll={handleUserScrollDebounced}>
         <div class="header  flex justify-between items-center">
             <div class="flex items-center gap.5">
-                <button class="new  btn btn-neutral" on:click={() => chat.reset()}>
+                <button class="new  btn btn-neutral" onclick={() => chat.reset()}>
                     <PencilNewIcon/>
                 </button>
             </div>
@@ -42,15 +46,9 @@ setTimeout(() => scroll.scroll('force'))
         {#each $rendered as response, idx}
             <ResponseWrapper type={response.type} {agentName}>
                 {#if response.type === 'user'}
-                    <UserResponse
-                        id={response.id}
-                        contentText={chat.userContentToText(response.content)}
-                        contentFiles={chat.userContentToFiles(response.content)}
-                        generating={$generating}
-                        on:submit={handleUserMessageSubmit}
-                    />
+                    {@render userResponse(response)}
                 {:else}
-                    <AgentResponse on:regenerate={() => chat.regenerateOnAgentResponse(idx)}>
+                    <AgentResponse regenerate={() => chat.regenerateOnAgentResponse(idx)}>
                         {#each response.parts as part}
                             {#if part.type === 'content'}
                                 <div class="markdown-body selectable-text-deep">
@@ -73,15 +71,14 @@ setTimeout(() => scroll.scroll('force'))
                 {/if}
             </ResponseWrapper>
         {/each}
-        <div bind:this={$ghostDiv} style="width: 100%; height: 0px; visibility: hidden;"/>
     </div>
     <Prompt
         text={$promptText}
         generating={$generating}
-        on:customchange={(e) => promptText.set(e.detail)}
-        on:upload={() => chat.upload()}
-        on:submit={() => chat.sendMessage()}
-        on:stop={() => chat.stopGenerating()}
+        onchange={text => promptText.set(text)}
+        onupload={() => chat.upload()}
+        onsubmit={() => chat.sendMessage()}
+        onstop={() => chat.stopGenerating()}
     >
         {#if $promptImages.length > 0}
             <div class="file-uploads flex flex-wrap gap.5 text-sm">
@@ -89,8 +86,7 @@ setTimeout(() => scroll.scroll('force'))
                     {#each $promptImages as image, index}
                         <ImageFile
                             image_url={image.image_url.url}
-                            removable={true}
-                            on:remove={() => chat.prompt.removeImage(index)}
+                            onremove={() => chat.prompt.removeImage(index)}
                         />
                     {/each}
                 {/key}
@@ -102,8 +98,7 @@ setTimeout(() => scroll.scroll('force'))
                     {#each $promptFiles as file, index}
                         <BinaryFile
                             name={file.name}
-                            removable={true}
-                            on:remove={() => chat.prompt.removeFile(index)}
+                            onremove={() => chat.prompt.removeFile(index)}
                         />
                     {/each}
                 {/key}
@@ -114,7 +109,7 @@ setTimeout(() => scroll.scroll('force'))
         <div class="errors-container  flex-col gap.5">
             {#each $errors as { type, text } (text)}
                 {#if errors.showType(type)}
-                    <ServerError {type} {text} on:remove={() => errors.remove(text)}/>
+                    <ServerError {type} {text} onremove={() => errors.remove(text)}/>
                 {/if}
             {/each}
         </div>
