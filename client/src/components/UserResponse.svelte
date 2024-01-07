@@ -1,18 +1,20 @@
 <script lang="ts">
-import { tick, createEventDispatcher } from 'svelte';
+import { tick } from 'svelte';
 import type { FileContentPart } from '../lib/core';
 import PencilIcon from './icon/Pencil.svelte';
 import TextArea from './TextArea.svelte';
 import BinaryFile from './BinaryFile.svelte';
-const dispatch = createEventDispatcher();
-export let id: string;
-export let contentText: string;
-export let contentFiles: FileContentPart[];
-export let generating: boolean;
 
-let editing: boolean = false;
+let { contentText, contentFiles, generating, onsubmit: onsubmitProp } = $props<{
+    contentText: string;
+    contentFiles: FileContentPart[];
+    generating: boolean;
+    onsubmit: (text: string) => void;
+}>();
 
-let editedContent: string = '';
+let editing: boolean = $state(false);
+
+let editedContent: string = $state('');
 
 function startEditing() {
     editedContent = contentText;
@@ -27,8 +29,8 @@ function stopEditing() {
     editing = false;
 }
 
-function saveAndSubmit() {
-    dispatch('submit', { text: editedContent, id });
+function onsubmit() {
+    onsubmitProp(editedContent);
     stopEditing();
 }
 
@@ -53,16 +55,16 @@ let textArea: TextArea | null = null;
         <TextArea
             bind:this={textArea}
             value={editedContent}
-            on:customchange={(e) => editedContent = e.detail}
+            onchange={text => editedContent = text}
             style="min-height: 1.25rem; word-wrap: break-word; white-space: pre-wrap;"
-            on:submit={saveAndSubmit}
+            {onsubmit}
             submitKeyMode="ctrl-enter"
         />
         <div class="editing-controls  flex justify-center gap.5">
-            <button class="btn btn-primary" on:click={saveAndSubmit} disabled={generating}>
+            <button class="btn btn-primary" onclick={onsubmit} disabled={generating}>
                 <div class="flex-center">Save & Submit</div>
             </button>
-            <button class="btn btn-neutral" on:click={stopEditing}>
+            <button class="btn btn-neutral" onclick={stopEditing}>
                 <div class="flex-center">Cancel</div>
             </button>
         </div>
@@ -71,7 +73,7 @@ let textArea: TextArea | null = null;
 {#if !editing}
     <div class="controls  flex gap.75">
         <div class="buttons-container  flex gap.25">
-            <button on:click={startEditing}>
+            <button onclick={startEditing}>
                 <div class="icon-wrapper  flex items-center gap.375 text-xs">
                     <PencilIcon/>
                 </div>

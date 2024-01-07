@@ -1,6 +1,9 @@
 <script lang="ts">
-export let type: 'user' | 'agent';
-export let agentName: string;
+let { type, agentName, children } = $props<{
+    type: 'user' | 'agent',
+    agentName: string,
+    children: any,
+}>();
 </script>
 
 <div class="chat-container  w-full">
@@ -10,7 +13,7 @@ export let agentName: string;
             <div class="name">{type === 'user' ? 'You' : agentName}</div>
             <div class="sections-container">
 
-                <slot/>
+                {@render children()}
 
             </div>
         </div>

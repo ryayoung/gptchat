@@ -15,7 +15,7 @@ onMount(async () => {
     ChatComponent = (await import('./components/Chat.svelte')).default;
 })
 
-const PROD = true;
+const PROD = false;
 
 const BASE_URL = PROD ? '' : 'http://127.0.0.1:5004';
 
@@ -42,6 +42,7 @@ chat.prompt.images.subscribe(saveState);
 chat.prompt.text.subscribe(saveState);
 chat.errors.subscribe(saveState);
 chat.config.subscribe(saveState);
+chat.generating.subscribe(saveState);
 
 
 // const startingMessages: PartialMessageAnyRole[] = [

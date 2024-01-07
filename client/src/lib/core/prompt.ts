@@ -56,9 +56,9 @@ export class Prompt {
 
     serialize(): SerializedPrompt {
         return {
-            text: this.text._,
-            images: this.images._,
-            files: this.files._,
+            text: this.text.get(),
+            images: this.images.get(),
+            files: this.files.get(),
         }
     }
 
@@ -75,14 +75,14 @@ export class Prompt {
     }
 
     textContentPart(): TextContentPart {
-        return { type: 'text', text: this.text._ }
+        return { type: 'text', text: this.text.get() }
     }
 
     isEmpty(): boolean {
         return (
-            this.text._.trim() === ''
-            && this.files._.length === 0
-            && this.images._.length === 0
+            this.text.get().trim() === ''
+            && this.files.get().length === 0
+            && this.images.get().length === 0
         )
     }
 
@@ -114,10 +114,10 @@ export class Prompt {
     }
 
     textIsEmpty(): boolean {
-        return this.text._.trim() === ''
+        return this.text.get().trim() === ''
     }
 
-    async upload() {
+    upload() {
         util.getFileUpload(async (file) => {
             if (!file) {
                 return
@@ -145,7 +145,7 @@ export class Prompt {
     }
 
     getContentParts(): ContentPart[] {
-        let result: ContentPart[] = [...this.files._, ...this.images._];
+        let result: ContentPart[] = [...this.files.get(), ...this.images.get()];
         if (!this.textIsEmpty()) {
             result.push(this.textContentPart())
         }

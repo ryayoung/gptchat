@@ -1,66 +1,69 @@
 <script lang="ts">
-import { createEventDispatcher, onMount, tick } from 'svelte';
-const dispatch = createEventDispatcher();
-export let value: string;
-export let style: string;
-export let placeholder: string = '';
-export let submitKeyMode: 'enter' | 'ctrl-enter' = 'enter';
-export let maxHeight: number = 0;
+import { tick } from 'svelte';
+let { value, style: styleProp = '', placeholder = '', submitKeyMode = 'enter', maxHeight = 0, onchange: onchangeProp, onsubmit: onsubmitProp } = $props<{
+    value?: string
+    style?: string
+    placeholder?: string
+    submitKeyMode?: 'enter' | 'ctrl-enter'
+    maxHeight?: number
+    onchange: (value: string) => void
+    onsubmit: () => void
+}>();
 
-$: maxHeightStyle = maxHeight ? `max-height: ${maxHeight}px;` : '';
-$: inlineStyle = `${maxHeightStyle} ${style}`;
+let maxHeightStyle = $derived(maxHeight ? `max-height: ${maxHeight}px;` : '');
+let style = $derived(`${maxHeightStyle} ${styleProp}`);
 
-let checkSubmitKey: (e: KeyboardEvent) => boolean;
-$: if (submitKeyMode === 'enter') {
-    checkSubmitKey = (e) => e.key === 'Enter' && !e.shiftKey;
-} else {
-    checkSubmitKey = (e) => e.key === 'Enter' && (e.metaKey || e.ctrlKey);
-}
+let checkSubmitKey: (e: KeyboardEvent) => boolean = $derived(
+    submitKeyMode === 'enter'
+        ? (e) => e.key === 'Enter' && !e.shiftKey
+        : (e) => e.key === 'Enter' && (e.metaKey || e.ctrlKey)
+)
 
-function handleKeyDown(e: KeyboardEvent) {
+function onkeydown(e: KeyboardEvent) {
     if (checkSubmitKey(e)) {
         e.preventDefault();
-        dispatch('submit');
+        onsubmitProp()
         tick().then(setHeight);
     }
 }
 
-let setHeight: () => void;
-
-$: if (maxHeight) {
-
-    setHeight = () => {
-        if (!elem) {
-            return;
-        }
-        if (elem.scrollHeight > maxHeight) {
-            elem.style.overflowY = 'scroll';
-            elem.style.height = maxHeight + 'px';
-        } else {
-            elem.style.overflowY = 'hidden';
-            elem.style.height = 'auto';
-            elem.style.height = elem.scrollHeight + 'px';
-        }
+function setHeightFromMaxHeight(maxHeight: number) {
+    if (!elem) {
+        return;
     }
-
-} else {
-
-    setHeight = () => {
-        if (!elem) {
-            return;
-        }
+    if (elem.scrollHeight > maxHeight) {
+        elem.style.overflowY = 'scroll';
+        elem.style.height = maxHeight + 'px';
+    } else {
         elem.style.overflowY = 'hidden';
         elem.style.height = 'auto';
         elem.style.height = elem.scrollHeight + 'px';
     }
-
 }
 
-onMount(() => setHeight());
+function setHeightAuto() {
+    if (!elem) {
+        return
+    }
+    elem.style.overflowY = 'hidden';
+    elem.style.height = 'auto';
+    elem.style.height = elem.scrollHeight + 'px';
+}
 
-function handleInput() {
+let setHeight: () => void = $derived(
+    maxHeight ? () => setHeightFromMaxHeight(maxHeight) : setHeightAuto
+)
+
+
+$effect(() => setHeight());
+
+function oninput() {
     setHeight();
-    dispatch('customchange', elem.value);
+    onchangeProp(elem.value);
+}
+
+function onfocus() {
+    setHeight();
 }
 
 export function focus() {
@@ -78,10 +81,10 @@ let elem: HTMLTextAreaElement;
     spellcheck = false
     {value}
     {placeholder}
-    style={inlineStyle}
-    on:focus={setHeight}
-    on:keydown={handleKeyDown}
-    on:input={handleInput}
+    {style}
+    {onfocus}
+    {onkeydown}
+    {oninput}
     rows="1"
 />
 

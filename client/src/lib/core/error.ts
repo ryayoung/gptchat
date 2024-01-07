@@ -28,7 +28,7 @@ export function createErrorStore() {
         },
 
         add(type, text) {
-            if (!this._.some(e => e.text === text)) {
+            if (!this.get().some(e => e.text === text)) {
                 console.error(`${type} Error: ${text}`);
                 this.update(errs => {
                     errs.push({ type, text });

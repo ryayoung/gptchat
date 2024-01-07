@@ -1,0 +1,126 @@
+== Info:   Trying 23.61.178.100:443...
+== Info: Connected to ccmu.fa.us6.oraclecloud.com (23.61.178.100) port 443 (#0)
+== Info: ALPN: offers h2,http/1.1
+== Info: (304) (OUT), TLS handshake, Client hello (1):
+=> Send SSL data, 332 bytes (0x14c)
+0000: ...H....Jpl......o............j.l....H ...y....$.C..V5..|)g.Zc.y
+0040: V...(...b.............0.,.(.$.......k.9...........=.5...../.+.'.
+0080: #.......g.3...E...<./...A.......................+............3.&
+00c0: .$... rU.s.?.h.J1..,...........K.>#..j... .....ccmu.fa.us6.oracl
+0100: ecloud.com......................................................
+0140: .h2.http/1.1
+== Info:  CAfile: /etc/ssl/cert.pem
+== Info:  CApath: none
+== Info: (304) (IN), TLS handshake, Server hello (2):
+<= Recv SSL data, 122 bytes (0x7a)
+0000: ...v...U5>.E.L0.YO........I...8.~.&... ...y....$.C..V5..|)g.Zc.y
+0040: V...(........+.....3.$... .....n7...n....)...j \U... .P~..
+== Info: (304) (IN), TLS handshake, Unknown (8):
+<= Recv SSL data, 35 bytes (0x23)
+0000: ...........................http/1.1
+== Info: (304) (IN), TLS handshake, Certificate (11):
+<= Recv SSL data, 2791 bytes (0xae7)
+0000: ...........0...0............L..$...K..b.UL0...*.H........0O1.0..
+0040: .U....US1.0...U....DigiCert Inc1)0'..U... DigiCert TLS RSA SHA25
+0080: 6 2020 CA10...230226000000Z..240228235959Z0n1.0...U....US1.0...U
+00c0: ....Texas1.0...U....Austin1.0...U....Oracle Corporation1!0...U..
+0100: ..*.fa.us6.oraclecloud.com0Y0...*.H.=....*.H.=....B...zw........
+0140: =^2M.......7.+........._.w..0.A..........`..E.......X....0...0..
+0180: .U.#..0....k......y........v..0...U......1(.&s......ly.......0;.
+01c0: .U...402..*.fa.us6.oraclecloud.com..fa.us6.oraclecloud.com0...U.
+0200: ..........0...U.%..0...+.........+.......0....U.....0..0@.>.<.:h
+0240: ttp://crl3.digicert.com/DigiCertTLSRSASHA2562020CA1-4.crl0@.>.<.
+0280: :http://crl4.digicert.com/DigiCertTLSRSASHA2562020CA1-4.crl0>..U
+02c0: . .70503..g.....0)0'..+.........http://www.digicert.com/CPS0...+
+0300: ........s0q0$..+.....0...http://ocsp.digicert.com0I..+.....0..=h
+0340: ttp://cacerts.digicert.com/DigiCertTLSRSASHA2562020CA1-1.crt0...
+0380: U....0.0.....+.....y......o...k.i.w....d.....\......2.F|....QHYF
+03c0: q..........W.....H0F.!.......8.m...?>&......]...JU......!..y#gD.
+0400: .......L...v....W..4a.z..z.v.s....L.x. }G......Q^q.*.k..z.wr....
+0440: ....i.....G0E.!...r..K..YB.....Z..7..C.....&..... .....R...y....
+0480: p'....Ftz........3.v.H..k..G4..j...0..R..V.,.....9..s.......*...
+04c0: ..G0E. M..,...#..P........Vh....}F...bi.!....N.=.........M......
+0500: .F4...D...0...*.H..............v...=.3.l,z?...&..h....j4...J..s.
+0540: l.E.....t..S...A5........{...p.-.{.+H....Q_AB.d..GY....T.../....
+0580: .Y+...$.....+.P/?E.....K.P].5..............v....l...!D.dv.u.....
+05c0: ..m.....a:z.W.............y...........0.v*.q..........#!M.9."...
+0600: .+.P.t.C...W.....:......h.Nvp......0...0...............XCF../.T"
+0640: ~.0...*.H........0a1.0...U....US1.0...U....DigiCert Inc1.0...U..
+0680: ..www.digicert.com1 0...U....DigiCert Global Root CA0...21041400
+06c0: 0000Z..310413235959Z0O1.0...U....US1.0...U....DigiCert Inc1)0'..
+0700: U... DigiCert TLS RSA SHA256 2020 CA10.."0...*.H.............0..
+0740: .......K.eGp..OX.....f..1.T.JfF.,..d....... ........z.....V...X.
+0780: Q.,4.....V..y_....%.{.RAf.`OW.I..7g....KgL"Q......WQt&.}..b....#
+07c0: .%So.4X.......XI"{........|..Q....7.6..Kb.I...g..>....^D..qB}X..
+0800: .......2...'.'.+t......d...S.V.x..I.)..IO.....\.Wmky.+.' ...=@.!
+0840: 0..............0..~0...U.......0.......0...U.......k......y.....
+0880: ...v..0...U.#..0.....P5V.L.f........=.U0...U...........0...U.%..
+08c0: 0...+.........+.......0v..+........j0h0$..+.....0...http://ocsp.
+0900: digicert.com0@..+.....0..4http://cacerts.digicert.com/DigiCertGl
+0940: obalRootCA.crt0B..U...;0907.5.3.1http://crl3.digicert.com/DigiCe
+0980: rtGlobalRootCA.crl0=..U. .6040...`.H...l..0...g....0...g.....0..
+09c0: .g.....0...g.....0...*.H..............2.^..nZ
+09ef: .........p..]...+u@.....1x.pK..X....k..~...X.Y....l...m.q.[.m.Z.
+0a2f: .{..C.*...A&_........o...t... ..O..g]].<..i.al....6....v.K.u....
+0a6f: U}&..w.>..|..{z.6o....q...s0.{..*Y.B.;...R....}.[rg.q.WGf...Je4^
+0aaf: ..*< .Q.L.R..k.+..~....6.C..*c.u?......<.0...L..6.s>....
+== Info: (304) (IN), TLS handshake, CERT verify (15):
+<= Recv SSL data, 79 bytes (0x4f)
+0000: ...K...G0E. '.3.[...K.j......z....j...GM.rHd.!..p...;.Y4.1.Yd.._
+0040: ..........j.$..
+== Info: (304) (IN), TLS handshake, Finished (20):
+<= Recv SSL data, 36 bytes (0x24)
+0000: ... ....yu.([..lu...2.....=.2....j..
+== Info: (304) (OUT), TLS handshake, Finished (20):
+=> Send SSL data, 36 bytes (0x24)
+0000: ... .....7..........^....t~8..U}...W
+== Info: SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256
+== Info: ALPN: server accepted http/1.1
+== Info: Server certificate:
+== Info:  subject: C=US; ST=Texas; L=Austin; O=Oracle Corporation; CN=*.fa.us6.oraclecloud.com
+== Info:  start date: Feb 26 00:00:00 2023 GMT
+== Info:  expire date: Feb 28 23:59:59 2024 GMT
+== Info:  subjectAltName: host "ccmu.fa.us6.oraclecloud.com" matched cert's "*.fa.us6.oraclecloud.com"
+== Info:  issuer: C=US; O=DigiCert Inc; CN=DigiCert TLS RSA SHA256 2020 CA1
+== Info:  SSL certificate verify ok.
+== Info: using HTTP/1.1
+=> Send header, 149 bytes (0x95)
+0000: GET /km/api/v1/content?limit=1&offset=1100&mode=KEY HTTP/1.1
+003e: Host: ccmu.fa.us6.oraclecloud.com
+0061: User-Agent: curl/8.1.2
+0079: Accept: application/json
+0093: 
+<= Recv header, 17 bytes (0x11)
+0000: HTTP/1.1 200 OK
+<= Recv header, 32 bytes (0x20)
+0000: Content-Type: application/json
+<= Recv header, 21 bytes (0x15)
+0000: Content-Length: 225
+<= Recv header, 25 bytes (0x19)
+0000: Referrer-Policy: origin
+<= Recv header, 33 bytes (0x21)
+0000: X-Content-Type-Options: nosniff
+<= Recv header, 55 bytes (0x37)
+0000: X-ORACLE-DMS-ECID: 0063ZTKmvSIDg^Qpu^XBiX0006aB00070r
+<= Recv header, 23 bytes (0x17)
+0000: X-ORACLE-DMS-RID: 0:5
+<= Recv header, 28 bytes (0x1c)
+0000: Content-Language: en,en-us
+<= Recv header, 33 bytes (0x21)
+0000: X-XSS-Protection: 1; mode=block
+<= Recv header, 64 bytes (0x40)
+0000: Strict-Transport-Security: max-age=31536000; includeSubDomains
+<= Recv header, 37 bytes (0x25)
+0000: Date: Fri, 05 Jan 2024 18:51:09 GMT
+<= Recv header, 24 bytes (0x18)
+0000: Connection: keep-alive
+<= Recv header, 39 bytes (0x27)
+0000: AKGRN: 0.d2f8da17.1704480668.455dc5b6
+<= Recv header, 2 bytes (0x2)
+0000: 
+<= Recv data, 225 bytes (0xe1)
+0000: {"items":[],"hasMore":false,"links":[{"rel":"canonical","href":"
+0040: https://ccmu.fa.us6.oraclecloud.com:443/km/api/v1/content?limit=
+0080: 20&offset=0&mode=KEY","mediaType":"application/json, application
+00c0: /xml","method":"GET"}],"count":0}
+== Info: Connection #0 to host ccmu.fa.us6.oraclecloud.com left intact

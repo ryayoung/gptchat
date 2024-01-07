@@ -1,15 +1,17 @@
 <script lang="ts">
-import { createEventDispatcher } from 'svelte';
 import CodiconClose from './icon/CodiconClose.svelte';
-const dispatch = createEventDispatcher();
-export let image_url: string;
-export let removable: boolean;
+
+let { image_url, onremove = null } = $props<{
+    image_url: string
+    onremove?: () => void | null
+}>()
+
 </script>
 
 <div class="image-item  relative overflow-hidden set-visibility-on-hover">
     <span class="image  flex-center full" style="background-image: url({image_url});"/>
-    {#if removable}
-        <button class="remove  rounded" on:click={() => dispatch('remove')}>
+    {#if onremove !== null}
+        <button class="remove  rounded" onclick={onremove}>
             <CodiconClose/>
         </button>
     {/if}
