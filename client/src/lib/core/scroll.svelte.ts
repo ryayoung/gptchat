@@ -2,7 +2,7 @@ import { tick } from 'svelte';
 import * as util from '../util';
 
 export class AutoScroller {
-    containerDiv = util.writable<HTMLDivElement | null>(null)
+    containerDiv = $state<HTMLDivElement | null>(null)
     autoEnabled = true
     lastScrollHeight = 0
     lastScrollTop = 0
@@ -14,9 +14,8 @@ export class AutoScroller {
     }
 
     handleUserScroll() {
-        const div = this.containerDiv.get();
-        if (!div) return;
-        const { scrollHeight, scrollTop, clientHeight } = div;
+        if (!this.containerDiv) return;
+        const { scrollHeight, scrollTop, clientHeight } = this.containerDiv;
 
         if (scrollTop < this.lastScrollTop) {
             this.autoEnabled = false;
@@ -27,15 +26,14 @@ export class AutoScroller {
     }
 
     private scrollChat(onlyIfScrollChanged: boolean = false) {
-        const div = this.containerDiv.get();
-        if (!div) {
+        if (!this.containerDiv) {
             return;
         }
-        const { scrollHeight } = div;
+        const { scrollHeight } = this.containerDiv;
         if (onlyIfScrollChanged && scrollHeight === this.lastScrollHeight) {
             return;
         }
-        div.scrollTo({ top: scrollHeight, behavior: 'smooth' })
+        this.containerDiv.scrollTo({ top: scrollHeight, behavior: 'smooth' })
         this.lastScrollHeight = scrollHeight;
     }
 

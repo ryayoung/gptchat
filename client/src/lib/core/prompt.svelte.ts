@@ -50,71 +50,59 @@ export type SerializedPrompt = {
 }
 
 export class Prompt {
-    text = util.writable<string>('')
-    images = util.writable<ImageContentPart[]>([]);
-    files = util.writable<BinaryContentPart[]>([]);
+    text: string = $state('')
+    images: ImageContentPart[] = $state([])
+    files: BinaryContentPart[] = $state([])
 
     serialize(): SerializedPrompt {
         return {
-            text: this.text.get(),
-            images: this.images.get(),
-            files: this.files.get(),
+            text: this.text,
+            images: this.images,
+            files: this.files,
         }
     }
 
     set(props: SerializedPrompt) {
-        this.text.set(props.text);
-        this.images.set(props.images);
-        this.files.set(props.files);
+        this.text = props.text
+        this.images = props.images
+        this.files = props.files
     }
 
     clear() {
-        this.text.set('');
-        this.files.set([]);
-        this.images.set([]);
+        this.text = ''
+        this.files = []
+        this.images = []
     }
 
     textContentPart(): TextContentPart {
-        return { type: 'text', text: this.text.get() }
+        return { type: 'text', text: this.text }
     }
 
     isEmpty(): boolean {
         return (
-            this.text.get().trim() === ''
-            && this.files.get().length === 0
-            && this.images.get().length === 0
+            this.text.trim() === ''
+            && this.files.length === 0
+            && this.images.length === 0
         )
     }
 
     removeImage(index: number) {
-        this.images.update(store => {
-            store.splice(index, 1)
-            return store;
-        })
+        this.images.splice(index, 1)
     }
     removeFile(index: number) {
-        this.files.update(store => {
-            store.splice(index, 1)
-            return store;
-        })
+        this.files.splice(index, 1)
     }
 
     addImage(image: ImageContentPart) {
-        this.images.update(store => {
-            store.push(image);
-            return store;
-        })
+        this.images.push(image)
     }
 
     addFile(file: BinaryContentPart) {
-        this.files.update(store => {
-            store.push(file)
-            return store;
-        })
+        this.files.push(file)
     }
 
     textIsEmpty(): boolean {
-        return this.text.get().trim() === ''
+        return this.text.trim() === ''
     }
 
     upload() {
@@ -145,7 +133,7 @@ export class Prompt {
     }
 
     getContentParts(): ContentPart[] {
-        let result: ContentPart[] = [...this.files.get(), ...this.images.get()];
+        let result: ContentPart[] = [...this.files, ...this.images];
         if (!this.textIsEmpty()) {
             result.push(this.textContentPart())
         }

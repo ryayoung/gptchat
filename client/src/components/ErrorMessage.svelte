@@ -8,7 +8,7 @@ let { type, text, onremove } = $props<{
 </script>
 
 <div class="background">
-    <div class="server-error flex items-start">
+    <div class="error flex items-start">
         <button onclick={onremove}>
             <CodiconClose/>
         </button>
@@ -27,7 +27,7 @@ let { type, text, onremove } = $props<{
     border-radius: .5rem;
 }
 
-.server-error {
+.error {
     background-color: color($black, .1);
     padding: .25rem .5rem .5rem .5rem;
     border-radius: .5rem;

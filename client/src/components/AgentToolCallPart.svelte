@@ -1,9 +1,10 @@
 <script lang="ts">
-import type { FunctionResultType } from '../lib/core';
+import type { FunctionResultType } from '../lib/core/index.svelte';
 import CheckIcon from './icon/Check.svelte';
 import BangIcon from './icon/Bang.svelte';
 import ChevronIcon from './icon/Chevron.svelte';
 import CodiconLoading from './icon/CodiconLoading.svelte';
+import PlotlyChart from './PlotlyChart.svelte';
 
 let { progressMode, header, args, argsTitle, result, resultTitle, resultType, generating } = $props<{
     progressMode: string;
@@ -62,8 +63,12 @@ let open: boolean = $state(generating ? true : true);
                 <div class="title block-result  text-xs">{@html resultTitle}</div>
                 <div class="horizontal-divider"></div>
                 {#if resultType === 'html'}
-                    <div class="html-result">
+                    <div class="html-result selectable-text-deep">
                         {@html result}
+                    </div>
+                {:else if resultType === 'plotly'}
+                    <div class="plotly-result selectable-text-deep">
+                        <PlotlyChart chart_json={result}/>
                     </div>
                 {:else}
                     <div class="markdown-body markdown-result selectable-text-deep">

@@ -1,23 +1,23 @@
 <script lang="ts">
-import type { Chat } from '../lib/core';
+import type { Chat } from '../lib/core/index.svelte';
 import Prompt from './Prompt.svelte';
 import UserResponse from './UserResponse.svelte';
 import AgentResponse from './AgentResponse.svelte';
 import AgentToolCallPart from './AgentToolCallPart.svelte';
 import ResponseWrapper from './ResponseWrapper.svelte';
-import ServerError from './ServerError.svelte';
+import ErrorMessage from './ErrorMessage.svelte';
 import BinaryFile from './BinaryFile.svelte';
 import ImageFile from './ImageFile.svelte';
 import PencilNewIcon from './icon/PencilNew.svelte';
 import CodiconLoading from './icon/CodiconLoading.svelte';
 
-let { chat } = $props<{ chat: Chat }>();
+let { chat } = $props<{
+    chat: Chat,
+}>();
 
-const { text: promptText, files: promptFiles, images: promptImages } = chat.prompt;
-const { connected, scroll, errors, rendered, generating, config } = chat;
-const { containerDiv, handleUserScrollDebounced } = scroll;
+const { prompt, scroll, errors, rendered, config } = chat;
 
-let agentName: string = $derived($config.agent?.name ?? 'Assistant');
+let agentName: string = $derived($config.agent_name ?? 'Assistant');
 
 setTimeout(() => scroll.scroll('force'))
 </script>
@@ -32,14 +32,14 @@ setTimeout(() => scroll.scroll('force'))
             onsubmit={text => chat.changeUserMessageAndSubmit(id, text)}
         />
     {/snippet}
-    <div class="chats  flex-col relative full scroll-y" bind:this={$containerDiv} onscroll={handleUserScrollDebounced}>
+    <div class="chats  flex-col relative full scroll-y" bind:this={scroll.containerDiv} onscroll={scroll.handleUserScrollDebounced}>
         <div class="header  flex justify-between items-center">
             <div class="flex items-center gap.5">
                 <button class="new  btn btn-neutral" onclick={() => chat.reset()}>
                     <PencilNewIcon/>
                 </button>
             </div>
-            {#if !$connected}
+            {#if !chat.connected}
                 <CodiconLoading style="width: 1.5rem; height: 1.5rem;"/>
             {/if}
         </div>
@@ -56,14 +56,14 @@ setTimeout(() => scroll.scroll('force'))
                                 </div>
                             {:else}
                                 <AgentToolCallPart
-                                    progressMode={chat.getFunctionCallStatus(part.result, $generating)}
+                                    progressMode={chat.getFunctionCallStatus(part.result, chat.generating)}
                                     header={chat.renderFunctionHeader(part.name, $config.functions)}
                                     args={chat.renderFunctionCallArgs(part.arguments, part.name, $config.functions)}
                                     argsTitle={chat.getArgsTitle(part.name, $config.functions)}
                                     result={chat.renderFunctionResult(part.result, part.name, $config.functions)}
                                     resultTitle={chat.getResultTitle(part.name, $config.functions)}
                                     resultType={chat.getFunctionResultType(part.name, $config.functions)}
-                                    generating={$generating}
+                                    generating={chat.generating}
                                 />
                             {/if}
                         {/each}
@@ -73,17 +73,17 @@ setTimeout(() => scroll.scroll('force'))
         {/each}
     </div>
     <Prompt
-        text={$promptText}
-        generating={$generating}
-        onchange={text => promptText.set(text)}
+        text={prompt.text}
+        generating={chat.generating}
+        onchange={text => prompt.text = text}
         onupload={() => chat.upload()}
         onsubmit={() => chat.sendMessage()}
         onstop={() => chat.stopGenerating()}
     >
-        {#if $promptImages.length > 0}
+        {#if prompt.images.length > 0}
             <div class="file-uploads flex flex-wrap gap.5 text-sm">
-                {#key $promptImages.length}
-                    {#each $promptImages as image, index}
+                {#key prompt.images.length}
+                    {#each prompt.images as image, index}
                         <ImageFile
                             image_url={image.image_url.url}
                             onremove={() => chat.prompt.removeImage(index)}
@@ -92,10 +92,10 @@ setTimeout(() => scroll.scroll('force'))
                 {/key}
             </div>
         {/if}
-        {#if $promptFiles.length > 0}
+        {#if prompt.files.length > 0}
             <div class="file-uploads flex flex-wrap gap.5 text-sm">
-                {#key $promptFiles.length}
-                    {#each $promptFiles as file, index}
+                {#key prompt.files.length}
+                    {#each prompt.files as file, index}
                         <BinaryFile
                             name={file.name}
                             onremove={() => chat.prompt.removeFile(index)}
@@ -105,11 +105,11 @@ setTimeout(() => scroll.scroll('force'))
             </div>
         {/if}
     </Prompt>
-    {#if $errors.length > 0}
+    {#if errors.items.length > 0}
         <div class="errors-container  flex-col gap.5">
-            {#each $errors as { type, text } (text)}
+            {#each errors.items as { type, text } (text)}
                 {#if errors.showType(type)}
-                    <ServerError {type} {text} onremove={() => errors.remove(text)}/>
+                    <ErrorMessage {type} {text} onremove={() => errors.remove(text)}/>
                 {/if}
             {/each}
         </div>

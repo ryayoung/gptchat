@@ -1,11 +1,9 @@
-from dataclasses import dataclass
 import os
-import time
 import inspect
 from uuid import uuid4
 from flask import Flask, request, abort
 from flask_socketio import SocketIO, emit
-from typing import Literal, cast, get_args, TypedDict
+from typing import Literal, get_args, TypedDict
 from gptchat.util.openai_util import iter_stream_choices, concat_stream
 from gptchat.util.serve import (
     get_static_responses_from_dir,
@@ -22,7 +20,6 @@ SERVER_CHANNELS = set(get_args(ServerChannel))
 ClientChannel = Literal[
     "connect",
     "config",
-    "default-messages",
     "message-set-all",
     "message-set",
     "message-update",
@@ -230,13 +227,11 @@ class Config(TypedDict, total=False):
 
 
 config: Config | dict = {}
-default_messages: list[dict] = []
 
 
 @handle_connect
 def connect():
     socket_emit("config", config)
-    socket_emit("default-messages", default_messages)
 
 
 def run_app(port: int = 5000, **kwargs):
