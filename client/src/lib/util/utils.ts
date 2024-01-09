@@ -62,6 +62,21 @@ export function refillArray<T>(array: T[], replacement: T[]): void {
 }
 
 
+export function filterObject<T extends object>(
+  obj: T,
+  callback: (key: keyof T, value: T[keyof T]) => boolean
+): T {
+    const result: Partial<T> = {};
+
+    for (const key in obj) {
+        const value = obj[key];
+        if (callback(key as keyof T, value)) {
+            result[key as keyof T] = value;
+        }
+    }
+    return result as T;
+}
+
 
 /**
  * Given a potentially incomplete json string that could terminate at any character,
@@ -112,5 +127,24 @@ export function prettifyJsonString(s: string): string {
         return JSON.stringify(JSON.parse(s), null, 2)
     } catch (e) {
         return s;
+    }
+}
+
+
+export function checkDarkModePreferred() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? true : false
+}
+
+
+export function changeHtmlClassList(op: 'add' | 'remove', ...tokens: string[]) {
+    document.documentElement.classList[op](...tokens);
+}
+
+
+export function safeJsonParse<T>(s: string): T | null {
+    try {
+        return JSON.parse(s);
+    } catch (e) {
+        return null;
     }
 }

@@ -1,31 +1,18 @@
 import * as util from '../util'
-import type { FileContentPart, SerializedPrompt } from './prompt'
+import type { FileContentPart, SerializedPrompt } from './prompt.svelte'
 import type { ConfigStore, FunctionConfig, SerializedConfigStore, FunctionResultType } from './config'
-import type { GeneratingStore } from './generating'
-import type { CustomError, ErrorStore } from './error'
+import type { CustomError, ErrorStore } from './error.svelte'
 import type { Delta } from './delta'
-import type {
-	PartialMessageAnyRole,
-	ContentPart,
-	Message,
-	AssistantMessage,
-    UserMessage,
-	ToolMessage,
-} from './message'
+import type { PartialMessageAnyRole, ContentPart, Message, AssistantMessage, UserMessage, ToolMessage } from './message'
 
 import * as oai from './openai'
 import { createConfigStore } from './config'
-import { createGeneratingStore } from './generating'
-import { createErrorStore } from './error'
+import { createErrorStore } from './error.svelte'
 import { Socket } from './socket'
-import { Prompt } from './prompt'
-import { AutoScroller } from './scroll'
+import { Prompt } from './prompt.svelte'
+import { AutoScroller } from './scroll.svelte'
 import { updateMessageFromDelta, newMessageFromDelta } from './delta'
-import {
-    messageMappingOrderFromOpenai,
-    convertMessageFromOpenai,
-    messagesToOpenai,
-} from './message'
+import { messageMappingOrderFromOpenai, convertMessageFromOpenai, messagesToOpenai } from './message'
 
 const SERVER_CHANNELS = ['connect', 'start-generating', 'stop-generating'] as const
 export type ServerChannel = (typeof SERVER_CHANNELS)[number]
@@ -46,12 +33,9 @@ export type ClientChannel = (typeof CLIENT_CHANNELS)[number]
 
 export type SerializedChat = {
 	prompt: SerializedPrompt
-    msgMapping: RecordOf<Message>
+	msgMapping: RecordOf<Message>
 	msgOrder: string[]
 	config: SerializedConfigStore
-	errors: CustomError[]
-	generating: boolean
-	defaultMessages: PartialMessageAnyRole[]
 }
 
 export type FunctionCallStatus = 'progress' | 'complete' | 'error'
@@ -59,79 +43,95 @@ export type FunctionCallStatus = 'progress' | 'complete' | 'error'
 export class Chat {
 	public scroll = new AutoScroller()
 	public rendered = util.writable<RenderedMessage[]>([])
-	public connected = util.writable<boolean>(false)
-    public msgMapping = util.writable<RecordOf<Message>>({})
-    public msgOrder: string[] = []
+	public msgMapping = util.writable<RecordOf<Message>>({})
+	public msgOrder: string[] = []
 
 	public prompt: Prompt = new Prompt()
 	public config: ConfigStore = createConfigStore()
 	public errors: ErrorStore = createErrorStore()
-	public generating: GeneratingStore = createGeneratingStore()
-	public defaultMessages = util.writable<PartialMessageAnyRole[]>([])
+	public generating: boolean = $state(false)
+	public connected: boolean = $state(false)
 
-	constructor(public socket: Socket<ClientChannel, ServerChannel>) {
+    private saveStateDebounced = util.debounce(() => this.saveState(), 1000)
+
+	constructor(
+        public id: string,
+        public socket: Socket<ClientChannel, ServerChannel>,
+    ) {
+        this.id = id
 		this.socket = socket
 
-		this.socket.on('connect', () => this.connected.set(true))
-		this.socket.on('disconnect', () => this.connected.set(false))
-
-		this.connected.subscribe((val) => log(val ? 'connected' : 'disconnected'))
-
+		this.socket.on('connect', () => this.connected = true)
+		this.socket.on('disconnect', () => this.connected = false)
 		this.socket.on('error', (err: any) => this.errors.add('Server', err))
-		this.socket.on('error', () => this.generating.set(false))
+		this.socket.on('error', () => this.generating = false)
 		this.socket.on('config', (config: any) => this.config.setAll(config))
 
-		this.socket.on('generating-started', () => this.generating.set(true))
-		this.socket.on('generating-done', () => this.generating.set(false))
+		this.socket.on('generating-started', () => this.generating = true)
+		this.socket.on('generating-done', () => this.generating = false)
 
 		this.socket.on('message-set-all', this.handleSetAllEvent.bind(this))
 		this.socket.on('message-set', this.handleSetEvent.bind(this))
 		this.socket.on('message-update', this.handleUpdateEvent.bind(this))
 
-		this.socket.on('default-messages', (messages: PartialMessageAnyRole[]) => {
-			this.defaultMessages.set(messages)
+		this.config.subscribe((store) => {
+			if (this.msgOrder.length === 0 && store.default_messages?.length > 0) {
+				this.handleSetAllEvent(store.default_messages)
+				this.scroll.scroll('force')
+			}
 		})
 
-        this.generating.subscribe(val => log("generating", val))
-
-		this.defaultMessages.subscribe(() => this.setMessagesIfDefault())
-
-		this.msgMapping.subscribe(store => {
+		this.msgMapping.subscribe((store) => {
 			this.rendered.set(renderMessages(store, this.msgOrder))
 			this.scroll.scroll('auto')
 		})
+
+        $effect(() => log(this.connected ? 'connected' : 'disconnected'))
+
+        $effect(() => {
+            this.prompt.text
+            this.prompt.images.length
+            this.prompt.files.length
+            this.saveStateDebounced()
+        })
+        this.config.subscribe(() => this.saveStateDebounced())
+        this.msgMapping.subscribe(() => this.saveStateDebounced())
+
+        const existingChat = util.localStorageGet<SerializedChat>(this.id)
+        if (existingChat) {
+            this.setFromSerialized(existingChat)
+        }
 	}
 
-	setMessagesIfDefault() {
-		if (this.msgOrder.length === 0 && this.defaultMessages.get().length > 0) {
-			this.handleSetAllEvent(this.defaultMessages.get())
-		}
-	}
+    saveState() {
+        setTimeout(() => {
+            if (!this.generating) {
+                util.localStorageSet(this.id, this.serialize())
+            }
+        })
+    }
 
 	serialize(): SerializedChat {
 		return {
-            msgMapping: this.msgMapping.get(),
+			msgMapping: this.msgMapping.get(),
 			msgOrder: this.msgOrder,
 			prompt: this.prompt.serialize(),
 			config: this.config.get(),
-			errors: this.errors.get(),
-			generating: this.generating.get(),
-			defaultMessages: this.defaultMessages.get(),
 		}
 	}
 
 	setFromSerialized(obj: SerializedChat) {
 		obj.prompt && this.prompt.set(obj.prompt)
-		obj.msgMapping && this.msgMapping.set(obj.msgMapping)
-		obj.msgOrder && util.refillArray(this.msgOrder, obj.msgOrder)
 		obj.config && this.config.set(obj.config)
-		obj.errors && this.errors.set(obj.errors)
-		obj.defaultMessages && this.defaultMessages.set(obj.defaultMessages)
-		obj.generating !== undefined && this.generating.set(obj.generating)
+		if (obj.msgOrder && obj.msgMapping) {
+			obj.msgOrder = obj.msgOrder.filter((id) => id in obj.msgMapping)
+            obj.msgMapping = util.filterObject(obj.msgMapping, ((k, _) => obj.msgOrder.includes(k)))
+            this.setAllMessages(obj.msgMapping, obj.msgOrder)
+		}
 	}
 
 	reset() {
-		this.handleSetAllEvent(this.defaultMessages.get());
+		this.handleSetAllEvent(this.config.get().default_messages ?? [])
 	}
 
 	upload() {
@@ -139,32 +139,28 @@ export class Chat {
 	}
 
 	stopGenerating() {
-		this.generating.set(false)
+		this.generating = false
 	}
 
 	sendMessage() {
-		if (this.generating.get() || this.prompt.isEmpty()) {
+		if (this.generating || this.prompt.isEmpty()) {
 			return
 		}
 		const parts = this.prompt.getContentParts()
-		const content = parts.length === 1 && parts[0].type === 'text' ? this.prompt.text.get() : parts
+		const content = parts.length === 1 && parts[0].type === 'text' ? this.prompt.text : parts
 		this.newUserMessage(content)
 		this.prompt.clear()
 		this.startGenerating()
 	}
 
 	changeUserMessageAndSubmit(id: string, newContent: string) {
-		if (this.generating.get()) {
-			return
-		}
+		if (this.generating) return
 		this.updateUserMessageContent(id, newContent)
 		this.regenerateAfterId(id)
 	}
 
 	regenerateOnAgentResponse(index: number) {
-		if (this.generating.get()) {
-			return
-		}
+		if (this.generating) return
 		const userResponse = this.rendered.get()[index - 1]
 		if (!userResponse || userResponse.type !== 'user') {
 			throw new Error('Tried to regenerate on an index not preceded by a user message')
@@ -176,21 +172,19 @@ export class Chat {
 		return util.toMarkdownWrappedCode(text)
 	}
 
-	renderFunctionResult(
-		result: string | null,
-		name: string,
-		functions: RecordOf<FunctionConfig>
-	): string | null {
+	renderFunctionResult(result: string | null, name: string, functions: RecordOf<FunctionConfig>): string | null {
 		if (result === null) return null
 		const result_type = functions[name]?.result?.type
 		if (!result_type) return result
 		switch (result_type) {
-			case 'markdown':
-				return util.toMarkdownWrappedCode(result)
 			case 'html':
 				return result
 			case 'text':
 				return result
+			case 'plotly':
+				return result
+			case 'markdown':
+				return util.toMarkdownWrappedCode(result)
 			case 'json':
 				return util.toMarkdown(util.wrapInMarkdownCodeBlock(util.prettifyJsonString(result), 'json'))
 			default:
@@ -198,11 +192,7 @@ export class Chat {
 		}
 	}
 
-	renderFunctionCallArgs(
-		args: string | null | undefined,
-		name: string,
-		functions: RecordOf<FunctionConfig>
-	): string {
+	renderFunctionCallArgs(args: string | null | undefined, name: string, functions: RecordOf<FunctionConfig>): string {
 		if (!args) return ''
 		const showKeyAsCode = functions[name]?.arguments?.show_key_as_code
 		if (showKeyAsCode && showKeyAsCode.key) {
@@ -270,128 +260,135 @@ export class Chat {
 
 	private startGenerating() {
 		this.socket.emit('start-generating', { messages: this.oaiMessages() })
-		this.generating.set(true)
+		this.generating = true
 		this.scroll.scroll('force')
-        this.rendered.set(renderMessages(this.msgMapping.get(), this.msgOrder, true))
+		this.rendered.set(renderMessages(this.msgMapping.get(), this.msgOrder, true))
 	}
 
-    // MESSAGES
-    // -----------------------------------------------------------------------------
- 
-    oaiMessages(): oai.Message[] {
-        return messagesToOpenai(this.msgMapping.get(), this.msgOrder);
-    }
+	// MESSAGES
+	// -----------------------------------------------------------------------------
 
-    newUserMessage(content: string | ContentPart[]): void {
-        this.setMessage({
-            id: util.newId(),
-            role: 'user',
-            content,
-        })
-    }
+	oaiMessages(): oai.Message[] {
+		return messagesToOpenai(this.msgMapping.get(), this.msgOrder)
+	}
 
-    updateUserMessageContent(id: string, content: string): void {
-        this.msgMapping.update(store => {
-            const msg = store[id] as UserMessage;
-            if (msg.role !== 'user') {
-                console.error(`Invalid message update. Existing message '${id}' is not a user message.`)
-                return store;
-            }
-            if (typeof msg.content === 'string') {
-                msg.content = content;
-                return store;
-            }
-            for (const part of msg.content) {
-                if (part.type === 'text') {
-                    part.text = content;
-                    return store;
-                }
-            }
-            throw new Error(`Message ${id} has no text content part.`);
-        })
-    }
+	newUserMessage(content: string | ContentPart[]): void {
+		this.setMessage({
+			id: util.newId(),
+			role: 'user',
+			content,
+		})
+	}
 
-    removeAfterId(id: string) {
-        const index = this.msgOrder.indexOf(id);
-        index !== -1 && this.removeAfterIndex(index);
-    }
+	updateUserMessageContent(id: string, content: string): void {
+		this.msgMapping.update((store) => {
+			const msg = store[id] as UserMessage
+			if (msg.role !== 'user') {
+				console.error(`Invalid message update. Existing message '${id}' is not a user message.`)
+				return store
+			}
+			if (typeof msg.content === 'string') {
+				msg.content = content
+				return store
+			}
+			for (const part of msg.content) {
+				if (part.type === 'text') {
+					part.text = content
+					return store
+				}
+			}
+			throw new Error(`Message ${id} has no text content part.`)
+		})
+	}
 
-    removeAfterIndex(index: number) {
-        const id = this.msgOrder[index];
-        if (!id) {
-            return;
-        }
-        const removed = this.msgOrder.splice(index + 1);
-        this.msgMapping.update(store => {
-            for (const id of removed) {
-                delete store[id];
-            }
-            return store;
-        })
-    }
+	removeAfterId(id: string) {
+		const index = this.msgOrder.indexOf(id)
+		index !== -1 && this.removeAfterIndex(index)
+	}
 
-    handleSetAllEvent(messages: PartialMessageAnyRole[]): void {
-        if (!this.generating.get()) return
-        const { mapping, order } = messageMappingOrderFromOpenai(messages);
+	removeAfterIndex(index: number) {
+		const id = this.msgOrder[index]
+		if (!id) {
+			return
+		}
+		const removed = this.msgOrder.splice(index + 1)
+		this.msgMapping.update((store) => {
+			for (const id of removed) {
+				delete store[id]
+			}
+			return store
+		})
+	}
+
+    setAllMessages(mapping: RecordOf<Message>, order: string[]) {
+        // Set order first, because of reactivity
         util.refillArray(this.msgOrder, order)
         this.msgMapping.set(mapping)
-        this.scroll.scroll('force')
     }
 
-    handleSetEvent(message: PartialMessageAnyRole) {
-		if (!this.generating.get()) return
-        const msg = convertMessageFromOpenai(message);
-        if (!msg) {
-            return this.errors.add('Client', `Invalid message: ${message}`)
-        }
-        this.setMessage(msg);
-    }
+	handleSetAllEvent(messages: PartialMessageAnyRole[]): void {
+		const { mapping, order } = messageMappingOrderFromOpenai(messages)
+        this.setAllMessages(mapping, order)
+		this.scroll.scroll('force')
+	}
 
-    handleUpdateEvent(delta: Delta) {
-		if (!this.generating.get()) return
-        if (delta.role && delta.role !== 'assistant') {
-            return this.errors.add('Client', `Invalid message update: role must be assistant.: ${delta}`);
-        }
-        const id = delta.id;
-        if (!id) {
-            return this.errors.add('Client', `Invalid message update: id not defined.: ${delta}`);
-        }
-        if (id in this.msgMapping.get()) {
-            return this.updateExistingFromDelta(id, delta);
-        } else {
-            return this.addNewFromDelta(id, delta);
-        }
-    }
+	handleSetEvent(message: PartialMessageAnyRole) {
+		if (!this.generating) return
+		const msg = convertMessageFromOpenai(message)
+		if (!msg) {
+			return this.errors.add('Client', `Invalid message: ${message}`)
+		}
+		this.setMessage(msg)
+	}
 
-    private addNewFromDelta(id: string, delta: Delta) {
-        const msg = newMessageFromDelta(id, delta);
-        if ('error' in msg) {
-            return this.errors.add('Client', msg.error);
-        }
-        this.setMessage(msg);
-    }
+	handleUpdateEvent(delta: Delta) {
+		if (!this.generating) return
+		if (delta.role && delta.role !== 'assistant') {
+			return this.errors.add('Client', `Invalid message update: role must be assistant.: ${delta}`)
+		}
+		const id = delta.id
+		if (!id) {
+			return this.errors.add('Client', `Invalid message update: id not defined.: ${delta}`)
+		}
+		if (id in this.msgMapping.get()) {
+			return this.updateExistingFromDelta(id, delta)
+		} else {
+			return this.addNewFromDelta(id, delta)
+		}
+	}
 
-    private updateExistingFromDelta(id: string, delta: Delta) {
-        this.msgMapping.update(store => {
-            const msg = store[id];
-            if (msg?.role === 'assistant') {
-                updateMessageFromDelta(msg, delta);
-            } else {
-                this.errors.add('Client', `Invalid message update. Existing message '${id}' is not an assistant message.`);
-            }
-            return store;
-        })
-    }
+	private addNewFromDelta(id: string, delta: Delta) {
+		const msg = newMessageFromDelta(id, delta)
+		if ('error' in msg) {
+			return this.errors.add('Client', msg.error)
+		}
+		this.setMessage(msg)
+	}
 
-    private setMessage(msg: Message) {
-        this.msgMapping.update(store => {
-            if (!(msg.id in store)) {
-                this.msgOrder.push(msg.id);
-            }
-            store[msg.id] = msg;
-            return store;
-        })
-    }
+	private updateExistingFromDelta(id: string, delta: Delta) {
+		this.msgMapping.update((store) => {
+			const msg = store[id]
+			if (msg?.role === 'assistant') {
+				updateMessageFromDelta(msg, delta)
+			} else {
+				this.errors.add(
+					'Client',
+					`Invalid message update. Existing message '${id}' is not an assistant message.`
+				)
+			}
+			return store
+		})
+	}
+
+	private setMessage(msg: Message) {
+		this.msgMapping.update((store) => {
+			if (!(msg.id in store)) {
+				this.msgOrder.push(msg.id)
+			}
+			store[msg.id] = msg
+			return store
+		})
+	}
 }
 
 type RenderedUserMessage = {
@@ -401,7 +398,7 @@ type RenderedUserMessage = {
 }
 
 export type RenderedAgentPartContent = {
-    id?: undefined
+	id?: undefined
 	type: 'content'
 	content: string
 }
@@ -479,12 +476,12 @@ function renderMessages(mapping: RecordOf<Message>, order: string[], generating:
 		rendering.push(agent)
 	}
 
-    if (generating && rendering[rendering.length - 1]?.type === 'user') {
-        rendering.push({
-            type: 'agent',
-            parts: [{ type: 'content', content: '' }],
-        })
-    }
+	if (generating && rendering[rendering.length - 1]?.type === 'user') {
+		rendering.push({
+			type: 'agent',
+			parts: [{ type: 'content', content: '' }],
+		})
+	}
 
 	return rendering
 }

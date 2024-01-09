@@ -1,6 +1,6 @@
 import * as util from '../util';
 import * as oai from './openai'
-import type { BinaryContentPart } from './prompt';
+import type { BinaryContentPart } from './prompt.svelte';
 
 type Role = 'user' | 'assistant' | 'tool';
 const roles = new Set<Role>(['user', 'assistant', 'tool']);
