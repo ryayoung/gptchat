@@ -8,21 +8,16 @@ pip install gptchat
 
 `gptchat` makes it easy to develop with OpenAI's API, without having to build your own user interface.
 
-This python package lets you instantly host a ChatGPT look-alike frontend application on your machine.
+This python package lets you instantly host a ChatGPT-like frontend application on your machine.
 
-As the developer, your only responsibility is to define what happens on the server when the user sends a message.
+As the developer, your only responsibility is to write the code for what happens on the server when the user sends a message, and how to respond.
 
-When the user hits send, the conversation (a list of [OpenAI Message objects](https://platform.openai.com/docs/api-reference/chat/object))
-will be passed to your handler function. You have **full control** over what to send back, and when. While your handler function is
-executing, you may emit updates with full messages, or partial messages (deltas) if streaming.
-
-Function calls (and soon, tool calls) are fully supported. The frontend will render function/tool calls
-for you, in the same style as ChatGPT.
+The `function_call` api is deprecated, in favor of `tools` and `tool_calls`
 
 #### Minimal learning curve necessary
 
 `gptchat`'s API is merely a reflection of the OpenAI API. Any data you send in the `messages` argument to OpenAI can also
-be passed to the `gptchat` frontend, where it will be rendered.
+be passed to the frontend, where it will be rendered.
 
 ## Getting Started
 
@@ -35,7 +30,7 @@ from openai import OpenAI
 openai_client = OpenAI(api_key="YOUR_API_KEY")
 
 @app.handle_start_generating
-def start_generating(messages):
+def generate_response(messages):
     # get response from openai
     response = openai_client.chat.completions.create(
         messages=messages,
@@ -86,7 +81,10 @@ app.config = {
                 "type": "html",
             }
         }
-    }
+    },
+    "default_messages": [
+        {"role": "system", "content": "You are a helpful AI assistant"},
+    ]
 }
 ```
 
@@ -116,22 +114,9 @@ type Config = {
         type?: 'text' | 'markdown' | 'html' | string
       }
     }
-  }
+  },
+  default_messages: Array<OpenAIMessage>  // Set messages to appear at the beginning of each new conversation
 }
-```
-
-
-### `default_messages`
-
-> Set default messages to appear whenever a new chat is created.
-
-```py
-app.default_messages = [
-    {
-        "role": "assistant",
-        "content": "Hello, how may I assist you today?",
-    },
-]
 ```
 
 

@@ -89,7 +89,7 @@ export function filterObject<T extends object>(
  */
 export function parseIncompleteJson(
     string: string,
-    endBracket: "}" | "]" = "}"
+    endBracket: "}" | "]" = "}",
 ): { [key: string]: any } | null {
     try {
         return JSON.parse(string);
@@ -147,4 +147,29 @@ export function safeJsonParse<T>(s: string): T | null {
     } catch (e) {
         return null;
     }
+}
+
+
+export function findLastTextNode(node: Node): Node | null {
+    if (node.nodeType === Node.TEXT_NODE) {
+        return node;
+    }
+    let lastTextNode = null;
+    for (let i = node.childNodes.length - 1; i >= 0; i--) {
+        lastTextNode = findLastTextNode(node.childNodes[i]);
+        if (lastTextNode && lastTextNode.textContent?.trim() !== '') {
+            break;
+        }
+    }
+    return lastTextNode;
+}
+
+
+const domParser = new DOMParser();
+
+
+export function appendNodeAfterLastNonEmptyTextNode(markup: string, element: HTMLElement): string {
+    const tree = domParser.parseFromString(markup, 'text/html').body;
+    (findLastTextNode(tree)?.parentNode as HTMLElement)?.appendChild(element);
+    return tree.innerHTML
 }

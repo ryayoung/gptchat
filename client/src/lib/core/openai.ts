@@ -83,6 +83,12 @@ export type ToolCall = {
         arguments: string
     }
 }
+export type SystemMessage = {
+    role: 'system'
+    content: string
+    tool_calls?: undefined
+    tool_call_id?: undefined
+}
 export type UserMessage = {
     role: 'user'
     content: string | ContentPart[]
@@ -103,10 +109,11 @@ export type ToolMessage = {
 }
 
 export type RoleMessageTypeMap = {
+    system: SystemMessage
     user: UserMessage
     assistant: AssistantMessage
     tool: ToolMessage
 }
 
 // Any message
-export type Message = UserMessage | AssistantMessage | ToolMessage
+export type Message = SystemMessage | UserMessage | AssistantMessage | ToolMessage

@@ -9,7 +9,7 @@ let { type, agentName, children } = $props<{
 <div class="chat-container  w-full">
     <div class="chat  flex gap.75 mx-auto">
         <div class="avatar {type}  flex-center rounded overflow-hidden"/>
-        <div class="message-container  flex-col relative w-full">
+        <div class="message-container  flex-col">
             <div class="name">{type === 'user' ? 'You' : agentName}</div>
             <div class="sections-container">
 
@@ -53,6 +53,8 @@ let { type, agentName, children } = $props<{
 }
 
 .message-container {
+    flex-grow: 1;
+    overflow: hidden;
     .name {
         font-weight: 600;
     }

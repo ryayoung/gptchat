@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { Chat, RenderedMessage } from '../lib/core/index.svelte';
+import type { Chat } from '../lib/core/index.svelte';
 import Prompt from './Prompt.svelte';
 import UserResponse from './UserResponse.svelte';
 import AgentResponse from './AgentResponse.svelte';
@@ -17,23 +17,27 @@ let { chat, totalWidth, totalHeight } = $props<{
     totalHeight: number
 }>();
 
-const { msgMapping, prompt, scroll, errors, rendered, config } = chat;
+const { prompt, scroll, errors, rendered, config } = chat;
 
 let agentName: string = $derived($config.agent_name ?? 'Assistant');
 
-$effect.pre(() => {
-    rendered.set(chat.renderMessages(
-        $msgMapping,
-        $config.functions,
-        chat.generating,
-    ))
-})
+function showCursor(generating: boolean, conversationLength: number, partsLength: number, conversationIdx: number, partIdx: number): boolean {
+    return generating && conversationIdx === conversationLength - 1 && partIdx === partsLength - 1;
+}
 
 setTimeout(() => scroll.scroll('force'))
 </script>
 
 
 <div class="container  flex-col">
+    {#snippet userResponse({ id, content, generating })}
+        <UserResponse
+            contentText={chat.userContentToText(content)}
+            contentFiles={chat.userContentToFiles(content)}
+            {generating}
+            onsubmit={text => chat.changeUserMessageAndSubmit(id, text)}
+        />
+    {/snippet}
     <div class="chats  flex-col relative full scroll-y" bind:this={scroll.containerDiv} onscroll={scroll.handleUserScrollDebounced}>
         <div class="header  flex justify-between items-center">
             <div class="flex items-center gap.5">
@@ -48,29 +52,23 @@ setTimeout(() => scroll.scroll('force'))
         {#each $rendered as response, index}
             <ResponseWrapper type={response.type} {agentName}>
                 {#if response.type === 'user'}
-                    <UserResponse
-                        contentText={response.contentText}
-                        contentImages={response.contentImages}
-                        contentBinaries={response.contentBinaries}
-                        generating={chat.generating}
-                        onsubmit={response.onsubmit}
-                    />
+                    {@render userResponse(response)}
                 {:else}
                     <AgentResponse regenerate={() => chat.regenerateOnAgentResponse(index)}>
-                        {#each response.parts as part}
+                        {#each response.parts as part, idx}
                             {#if part.type === 'content'}
                                 <div class="markdown-body selectable-text-deep">
-                                    {@html part.markdownContent}
+                                    {@html chat.addStreamCursor(chat.renderAssistantMarkdown(part.content), showCursor(chat.generating, $rendered.length, response.parts.length, index, idx))}
                                 </div>
                             {:else}
                                 <AgentToolCallPart
-                                    progressMode={part.progressMode}
-                                    header={part.header}
-                                    args={part.args}
-                                    argsTitle={part.argsTitle}
-                                    result={part.result}
-                                    resultTitle={part.resultTitle}
-                                    resultType={part.resultType}
+                                    progressMode={chat.getFunctionCallStatus(part.result, chat.generating)}
+                                    header={chat.renderFunctionHeader(part.name, $config.functions)}
+                                    args={chat.renderFunctionCallArgs(part.arguments, part.name, $config.functions)}
+                                    argsTitle={chat.getArgsTitle(part.name, $config.functions)}
+                                    result={chat.addStreamCursor(chat.renderFunctionResult(part.result, part.name, $config.functions), showCursor(chat.generating, $rendered.length, response.parts.length, index, idx))}
+                                    resultTitle={chat.getResultTitle(part.name, $config.functions)}
+                                    resultType={chat.getFunctionResultType(part.name, $config.functions)}
                                     generating={chat.generating}
                                 />
                             {/if}

@@ -1,23 +1,25 @@
 <script lang="ts">
-import { tick } from 'svelte';
-import type { FileContentPart } from '../lib/core';
-import PencilIcon from './icon/Pencil.svelte';
-import TextArea from './TextArea.svelte';
-import BinaryFile from './BinaryFile.svelte';
+import { tick } from 'svelte'
+import type { BinaryContentPart } from '../lib/core/index.svelte'
+import type { ImageContentPart } from '../lib/core/openai'
+import PencilIcon from './icon/Pencil.svelte'
+import TextArea from './TextArea.svelte'
+import BinaryFile from './BinaryFile.svelte'
 
-let { contentText, contentFiles, generating, onsubmit: onsubmitProp } = $props<{
+let { contentText: text, contentImages: images, contentBinaries: binaries, generating, onsubmit: onsubmitProp } = $props<{
     contentText: string;
-    contentFiles: FileContentPart[];
+    contentImages: ImageContentPart[];
+    contentBinaries: BinaryContentPart[];
     generating: boolean;
     onsubmit: (text: string) => void;
 }>();
 
 let editing: boolean = $state(false);
 
-let editedContent: string = $state('');
+let editedText: string = $state('');
 
 function startEditing() {
-    editedContent = contentText;
+    editedText = text;
     editing = true;
     tick().then(() => {
         textArea?.focus();
@@ -25,12 +27,12 @@ function startEditing() {
 }
 
 function stopEditing() {
-    editedContent = '';
+    editedText = '';
     editing = false;
 }
 
 function onsubmit() {
-    onsubmitProp(editedContent);
+    onsubmitProp(editedText);
     stopEditing();
 }
 
@@ -38,25 +40,34 @@ let textArea: TextArea | null = null;
 </script>
 
 <div class="content-container  flex-col">
-    {#each contentFiles as file}
-        <div>
-            {#if file.type === 'image_url'}
-                <img style="max-height: 12rem; width: auto; height: auto;" src={file.image_url.url} alt=Uploaded loading=lazy decoding=async/>
-            {:else if file.type === 'binary'}
-                <BinaryFile name={file.name} style="margin: .5rem 0 1rem 0;"/>
-            {/if}
+    {#if images.length > 0}
+        <div class="images-container  flex flex-wrap gap.5">
+            {#each images as { image_url: { url: src } }}
+                <div class="image-item  overflow-hidden">
+                    <img {src} style="max-height: 12rem; width: auto; height: auto;" alt=Uploaded loading=lazy decoding=async/>
+                </div>
+            {/each}
         </div>
-    {/each}
+    {/if}
+    {#if binaries.length > 0}
+        <div class="binaries-container  flex flex-wrap gap.5">
+            {#each binaries as { name }}
+                <div>
+                    <BinaryFile {name}/>
+                </div>
+            {/each}
+        </div>
+    {/if}
     {#if !editing}
         <div class="user-text  flex-col items-start gap.75 selectable-text-deep">
-            {contentText}
+            {text}
         </div>
     {:else}
         <TextArea
             bind:this={textArea}
-            value={editedContent}
-            onchange={text => editedContent = text}
-            style="min-height: 1.25rem; word-wrap: break-word; white-space: pre-wrap;"
+            value={editedText}
+            onchange={text => editedText = text}
+            style="min-height: 1.25rem; word-wrap: break-word; white-space: pre-wrap; width: 100%;"
             {onsubmit}
             submitKeyMode="ctrl-enter"
         />
@@ -85,10 +96,20 @@ let textArea: TextArea | null = null;
 <style lang="scss">
 @import '../styles/pre.scss';
 
+
 .content-container {
     max-width: 100%;
-
 }
+
+.images-container, .binaries-container {
+    margin: .5rem 0 .5rem 0;
+}
+
+.image-item {
+    border-radius: .75rem;
+    border-width: 1px;
+}
+
 .user-text {
     word-wrap: break-word;
     white-space: pre-wrap;

@@ -62,6 +62,19 @@ div.wrapped-code-container {
 
 .markdown-code-block.plain {
     border-radius: .5rem;
-    overflow: hidden;
+    overflow-x: auto;
 }
 
+.markdown-body table tr:nth-child(2n) {
+    background-color: color($black, .10);
+}
+
+.stream-cursor-span {
+    display: inline-block;
+    background-color: currentColor;
+    height: 1em;
+    width: .75rem;
+    border-radius: .29rem;
+    margin-left: 0.25rem;
+    vertical-align: middle;
+}
