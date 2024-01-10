@@ -1,6 +1,6 @@
-import * as util from '../util';
-import type { ImageContentPart, TextContentPart } from './openai';
-import type { ContentPart } from './message';
+import * as util from '../util'
+import type { ImageContentPart, TextContentPart } from './openai'
+import type { ContentPart } from './message'
 
 export type BinaryContentPart = {
     type: 'binary'
@@ -22,7 +22,7 @@ type FileHandlers = {
 
 const fileHandlers: FileHandlers = {
     async binary(file) {
-        const content = await util.readFile(file, 'ArrayBuffer');
+        const content = await util.readFile(file, 'ArrayBuffer')
         return {
             type: 'binary',
             name: file.name,
@@ -31,7 +31,7 @@ const fileHandlers: FileHandlers = {
         }
     },
     async image_url(file) {
-        const url = await util.readFile(file, 'DataURL');
+        const url = await util.readFile(file, 'DataURL')
         return {
             type: 'image_url',
             image_url: { url },
@@ -40,7 +40,7 @@ const fileHandlers: FileHandlers = {
 }
 
 function getFileType(file: File): keyof FilePartTypeMapping {
-    return file.type.startsWith('image') ? 'image_url' : 'binary';
+    return file.type.startsWith('image') ? 'image_url' : 'binary'
 }
 
 export type SerializedPrompt = {
@@ -79,11 +79,7 @@ export class Prompt {
     }
 
     isEmpty(): boolean {
-        return (
-            this.text.trim() === ''
-            && this.files.length === 0
-            && this.images.length === 0
-        )
+        return this.text.trim() === '' && this.files.length === 0 && this.images.length === 0
     }
 
     removeImage(index: number) {
@@ -111,34 +107,34 @@ export class Prompt {
                 return
             }
 
-            const type = getFileType(file);
-            let fileUpload: FileContentPart;
+            const type = getFileType(file)
+            let fileUpload: FileContentPart
 
             try {
-                fileUpload = await fileHandlers[type](file);
+                fileUpload = await fileHandlers[type](file)
             } catch (err) {
-                return;
+                return
             }
 
             if (!fileUpload) {
-                return;
+                return
             }
 
             if (fileUpload.type === 'image_url') {
-                this.addImage(fileUpload);
+                this.addImage(fileUpload)
             } else {
-                this.addFile(fileUpload);
+                this.addFile(fileUpload)
             }
         })
     }
 
     getContentParts(): ContentPart[] {
-        let result: ContentPart[] = [...this.files, ...this.images];
+        let result: ContentPart[] = [...this.files, ...this.images]
         if (!this.textIsEmpty()) {
             result.push(this.textContentPart())
         }
-        return result;
+        return result
     }
 }
 
-export default Prompt;
+export default Prompt

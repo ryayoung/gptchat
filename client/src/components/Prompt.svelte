@@ -1,7 +1,7 @@
 <script lang="ts">
-import TextArea from './TextArea.svelte';
-import SendIcon from './icon/Send.svelte';
-import FileUploadIcon from './icon/FileUpload.svelte';
+import TextArea from './TextArea.svelte'
+import SendIcon from './icon/Send.svelte'
+import FileUploadIcon from './icon/FileUpload.svelte'
 
 let { text, generating, onchange, onsubmit, onupload, onstop, children } = $props<{
     text: string
@@ -13,14 +13,13 @@ let { text, generating, onchange, onsubmit, onupload, onstop, children } = $prop
     children: any
 }>()
 
-setTimeout(() => textArea?.focus(), 50);
+setTimeout(() => textArea?.focus(), 50)
 
-let textArea: TextArea;
+let textArea: TextArea
 </script>
 
-<div class="prompt-container  flex justify-center w-full">
-    <form class="prompt  flex-col relative w-full">
-
+<div class="prompt-container flex justify-center w-full">
+    <form class="prompt flex-col relative w-full">
         {@render children()}
 
         <TextArea
@@ -32,16 +31,21 @@ let textArea: TextArea;
             maxHeight={200}
             style="height: 3.25rem; padding: .875rem 3rem .875rem 3rem;"
         />
-        <button class="upload-btn  bottom-left" type=button onclick={onupload}>
-            <FileUploadIcon/>
+        <button class="upload-btn bottom-left" type="button" onclick={onupload}>
+            <FileUploadIcon />
         </button>
         {#if generating}
-            <button class="stop-btn  bottom-right rounded" type=button onclick={onstop}>
-                <div class="square"/>
+            <button class="stop-btn bottom-right rounded" type="button" onclick={onstop}>
+                <div class="square" />
             </button>
         {:else}
-            <button class="send-btn  flex-center bottom-right" type=button class:dimmed={text === ''} onclick={onsubmit}>
-                <SendIcon/>
+            <button
+                class="send-btn flex-center bottom-right"
+                type="button"
+                class:dimmed={text === ''}
+                onclick={onsubmit}
+            >
+                <SendIcon />
             </button>
         {/if}
     </form>
@@ -51,27 +55,27 @@ let textArea: TextArea;
 @import '../styles/pre.scss';
 
 .bottom-left {
-    @include absolute($left: .75rem, $bottom: .75rem);
+    @include absolute($left: 0.75rem, $bottom: 0.75rem);
 }
 .bottom-right {
-    @include absolute($right: .75rem, $bottom: .75rem);
+    @include absolute($right: 0.75rem, $bottom: 0.75rem);
 }
 
 .prompt {
     max-width: 48rem;
     margin-bottom: 2rem;
     border-radius: 1rem;
-    border: 1px solid color($border, .2);
+    border: 1px solid color($border, 0.2);
     background-color: color($surface-primary);
 
     &:focus-within {
-        box-shadow: 0 2px 6px color($black, .05);
-        border-color: color($border, .25);
+        box-shadow: 0 2px 6px color($black, 0.05);
+        border-color: color($border, 0.25);
     }
 }
 
 .upload-btn {
-    padding-bottom: .125rem;
+    padding-bottom: 0.125rem;
 }
 .send-btn {
     @include square(1.75rem);
@@ -80,7 +84,7 @@ let textArea: TextArea;
     border: 1px solid color($bw-inverse);
     color: color($bw);
 
-    transition: opacity .15s cubic-bezier(.4,0,.2,1);
+    transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 
     &.dimmed {
         opacity: 0.1;
@@ -88,11 +92,11 @@ let textArea: TextArea;
 }
 
 .stop-btn {
-    padding: .5rem;
+    padding: 0.5rem;
     background-color: color($bw-inverse);
 
     .square {
-        @include square(.75rem);
+        @include square(0.75rem);
         background-color: color($surface-primary);
         border-radius: 1.5px;
     }

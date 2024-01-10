@@ -1,6 +1,5 @@
-
 declare global {
     interface Window {
-        log: (...data: any[]) => void;
+        log: (...data: any[]) => void
     }
 }

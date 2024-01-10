@@ -1,10 +1,10 @@
 <script lang="ts">
-import type { FunctionResultType } from '../lib/core/index.svelte';
-import CheckIcon from './icon/Check.svelte';
-import BangIcon from './icon/Bang.svelte';
-import ChevronIcon from './icon/Chevron.svelte';
-import CodiconLoading from './icon/CodiconLoading.svelte';
-import PlotlyChart from './PlotlyChart.svelte';
+import type { FunctionResultType } from '../lib/core/index.svelte'
+import CheckIcon from './icon/Check.svelte'
+import BangIcon from './icon/Bang.svelte'
+import ChevronIcon from './icon/Chevron.svelte'
+import CodiconLoading from './icon/CodiconLoading.svelte'
+import PlotlyChart from './PlotlyChart.svelte'
 
 let { progressMode, header, args, argsTitle, result, resultTitle, resultType, generating } = $props<{
     progressMode: string
@@ -15,38 +15,38 @@ let { progressMode, header, args, argsTitle, result, resultTitle, resultType, ge
     resultTitle: string
     resultType: FunctionResultType
     generating: boolean
-}>();
+}>()
 
-let open: boolean = $state(generating ? true : true);
+let open: boolean = $state(generating ? true : true)
 </script>
 
 {#if header !== null}
-    <div class="header  flex items-center gap.625">
-        <div class="indicator-container  relative">
+    <div class="header flex items-center gap.625">
+        <div class="indicator-container relative">
             <div class="indicator {progressMode}  flex-center full rounded">
                 {#if progressMode === 'error'}
-                    <BangIcon/>
+                    <BangIcon />
                 {:else if progressMode === 'progress'}
-                    <CodiconLoading style="height: 1.25rem; width: 1.25rem;"/>
+                    <CodiconLoading style="height: 1.25rem; width: 1.25rem;" />
                 {:else}
-                    <CheckIcon/>
+                    <CheckIcon />
                 {/if}
             </div>
         </div>
-        <div class="label-container  relative w-full">
-            <button class="label  flex items-center gap.25" onclick={() => open = !open}>
+        <div class="label-container relative w-full">
+            <button class="label flex items-center gap.25" onclick={() => (open = !open)}>
                 <div class="markdown-body function-status selectable-text-deep">
                     {@html header}
                 </div>
-                <ChevronIcon {open}/>
+                <ChevronIcon {open} />
             </button>
         </div>
     </div>
 {/if}
 {#if open || header === null}
-    <div class="content  overflow-hidden">
+    <div class="content overflow-hidden">
         {#if args}
-            <div class="title args  text-xs">{@html argsTitle}</div>
+            <div class="title args text-xs">{@html argsTitle}</div>
             <div class="horizontal-divider"></div>
             <div class="markdown-body args selectable-text-deep">
                 {@html args}
@@ -56,11 +56,11 @@ let open: boolean = $state(generating ? true : true);
             <div class="horizontal-divider"></div>
             {#if resultType === 'text'}
                 <div class="text-result-wrapper">
-                    <div class="title text-result  text-xs">{@html resultTitle}</div>
+                    <div class="title text-result text-xs">{@html resultTitle}</div>
                     <pre class="result selectable-text">{result}</pre>
                 </div>
             {:else}
-                <div class="title block-result  text-xs">{@html resultTitle}</div>
+                <div class="title block-result text-xs">{@html resultTitle}</div>
                 <div class="horizontal-divider"></div>
                 {#if resultType === 'html'}
                     <div class="html-result selectable-text-deep">
@@ -68,7 +68,7 @@ let open: boolean = $state(generating ? true : true);
                     </div>
                 {:else if resultType === 'plotly'}
                     <div class="plotly-result selectable-text-deep">
-                        <PlotlyChart chart_json={result}/>
+                        <PlotlyChart chart_json={result} />
                     </div>
                 {:else}
                     <div class="markdown-body markdown-result selectable-text-deep">
@@ -88,7 +88,7 @@ let open: boolean = $state(generating ? true : true);
 }
 
 .header {
-    margin-top: .625rem;
+    margin-top: 0.625rem;
 }
 
 .indicator-container {
@@ -111,7 +111,7 @@ let open: boolean = $state(generating ? true : true);
 }
 
 .label-container {
-    margin-top: -.75px;
+    margin-top: -0.75px;
     line-height: 1.25rem;
 }
 button.label {
@@ -121,20 +121,21 @@ button.label {
         text-align: left;
 
         :global(p) {
-            margin-bottom: .25rem;
+            margin-bottom: 0.25rem;
         }
     }
 }
 
 .content {
-    margin: .75rem 0 .75rem 0;
-    border-radius: .75rem;
-    border: 1px solid color($border, .2);
+    margin: 0.75rem 0 0.75rem 0;
+    border-radius: 0.75rem;
+    border: 1px solid color($border, 0.2);
 }
 
 .title {
-    &.args, &.block-result {
-        padding: .5rem 1rem;
+    &.args,
+    &.block-result {
+        padding: 0.5rem 1rem;
     }
 
     &.block-result {
@@ -142,17 +143,16 @@ button.label {
     }
 
     &.text-result {
-        margin-bottom: .5rem;
+        margin-bottom: 0.5rem;
     }
-
 }
 
 .horizontal-divider {
-    border-top: 1px solid color($border, .2);
+    border-top: 1px solid color($border, 0.2);
 }
 
 .text-result-wrapper {
-    padding: .75rem 1rem 1rem 1rem;
+    padding: 0.75rem 1rem 1rem 1rem;
     overflow: auto;
 }
 

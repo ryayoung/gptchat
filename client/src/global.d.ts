@@ -1,10 +1,9 @@
-
 declare global {
-    function log(...data: any[]): void;
+    function log(...data: any[]): void
 
     interface Window {
-        Plotly: any;
+        Plotly: any
     }
 }
 
-export {};
+export {}

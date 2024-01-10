@@ -1,23 +1,21 @@
 <script lang="ts">
 let { type, agentName, children } = $props<{
-    type: 'user' | 'agent',
-    agentName: string,
-    children: any,
-}>();
+    type: 'user' | 'agent'
+    agentName: string
+    children: any
+}>()
 </script>
 
-<div class="chat-container  w-full">
-    <div class="chat  flex gap.75 mx-auto">
-        <div class="avatar {type}  flex-center rounded overflow-hidden"/>
-        <div class="message-container  flex-col">
+<div class="chat-container w-full">
+    <div class="chat flex gap.75 mx-auto">
+        <div class="avatar {type}  flex-center rounded overflow-hidden" />
+        <div class="message-container flex-col">
             <div class="name">{type === 'user' ? 'You' : agentName}</div>
             <div class="sections-container">
-
                 {@render children()}
-
             </div>
         </div>
-        <div class="right-spacer"/>
+        <div class="right-spacer" />
     </div>
 </div>
 
@@ -29,7 +27,7 @@ let { type, agentName, children } = $props<{
 }
 
 .chat {
-    padding: .5rem 1.25rem;
+    padding: 0.5rem 1.25rem;
     max-width: 48rem;
 
     --button-visibility: hidden;
@@ -42,7 +40,7 @@ let { type, agentName, children } = $props<{
 .avatar {
     flex-shrink: 0;
     @include square(1.5rem);
-    margin-top: .125rem;
+    margin-top: 0.125rem;
 
     &.user {
         background-color: color($gray-400);
@@ -64,5 +62,4 @@ let { type, agentName, children } = $props<{
     flex-shrink: 0;
     width: 1.5rem;
 }
-
 </style>

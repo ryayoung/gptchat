@@ -10,7 +10,7 @@ import App from './App.svelte'
 globalThis.log = (...data: any[]) => console.log(...data)
 
 const app = createRoot(App, {
-	target: document.getElementById('app')!,
+    target: document.getElementById('app')!,
 })
 
 export default app

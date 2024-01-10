@@ -1,20 +1,19 @@
 <script lang="ts">
-import RefreshIcon from './icon/Refresh.svelte';
+import RefreshIcon from './icon/Refresh.svelte'
 let { regenerate, children } = $props<{
-    regenerate: () => void,
+    regenerate: () => void
     children: any
-}>();
-
+}>()
 </script>
 
 <div class="sections-container">
-    <div class="content-container  flex-col">
+    <div class="content-container flex-col">
         {@render children()}
     </div>
-    <div class="controls  flex gap.25">
+    <div class="controls flex gap.25">
         <div class="buttons-container">
             <button onclick={regenerate}>
-                <div class="icon-wrapper  flex items-center gap.375 text-xs">
+                <div class="icon-wrapper flex items-center gap.375 text-xs">
                     <RefreshIcon />
                 </div>
             </button>
@@ -30,11 +29,11 @@ let { regenerate, children } = $props<{
 }
 
 .controls {
-    margin-top: .25rem;
+    margin-top: 0.25rem;
     color: color($text-tertiary);
 
     button {
-        padding: .25rem;
+        padding: 0.25rem;
         padding-left: 0;
         visibility: var(--button-visibility);
 

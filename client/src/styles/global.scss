@@ -30,17 +30,19 @@
         }
     }
 
-    ul, ol {
+    ul,
+    ol {
         color: color($text-secondary);
     }
 
-    b, strong {
+    b,
+    strong {
         color: color($text-primary);
     }
 }
 
 div.wrapped-code-container {
-    border-radius: .5rem;
+    border-radius: 0.5rem;
     overflow: hidden;
     margin-bottom: 1rem;
 
@@ -48,9 +50,9 @@ div.wrapped-code-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background-color: color($black, .10);
-        padding: .5rem 1rem;
-        font-size: .75rem;
+        background-color: color($black, 0.1);
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
         line-height: 1rem;
     }
 
@@ -61,20 +63,20 @@ div.wrapped-code-container {
 }
 
 .markdown-code-block.plain {
-    border-radius: .5rem;
+    border-radius: 0.5rem;
     overflow-x: auto;
 }
 
 .markdown-body table tr:nth-child(2n) {
-    background-color: color($black, .10);
+    background-color: color($black, 0.1);
 }
 
 .stream-cursor-span {
     display: inline-block;
     background-color: currentColor;
     height: 1em;
-    width: .75rem;
-    border-radius: .29rem;
+    width: 0.75rem;
+    border-radius: 0.29rem;
     margin-left: 0.25rem;
     vertical-align: middle;
 }

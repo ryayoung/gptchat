@@ -1,5 +1,5 @@
-export type Role = 'user' | 'assistant' | 'tool';
-export const roles = new Set<Role>(['user', 'assistant', 'tool']);
+export type Role = 'user' | 'assistant' | 'tool'
+export const roles = new Set<Role>(['user', 'assistant', 'tool'])
 
 // DELTA
 // -----------------------------------------------------------------------------
@@ -8,30 +8,34 @@ export const roles = new Set<Role>(['user', 'assistant', 'tool']);
 export type ToolCallFirstDelta = {
     content?: null
     role?: 'assistant'
-    tool_calls: [{
-        id: string
-        type: 'function'
-        index: number
-        function: {
-            name: string
-            arguments: string
-        }
-    }]
+    tool_calls: [
+        {
+            id: string
+            type: 'function'
+            index: number
+            function: {
+                name: string
+                arguments: string
+            }
+        },
+    ]
 }
 export type CallDeltaObjectFull = ToolCallFirstDelta['tool_calls'][0]
 
 export type ToolCallExtraDelta = {
     content?: undefined
     role?: undefined
-    tool_calls: [{
-        id?: undefined
-        type?: undefined
-        index: number
-        function: {
-            name?: undefined
-            arguments: string
-        }
-    }]
+    tool_calls: [
+        {
+            id?: undefined
+            type?: undefined
+            index: number
+            function: {
+                name?: undefined
+                arguments: string
+            }
+        },
+    ]
 }
 export type CallDeltaObjectPartial = ToolCallExtraDelta['tool_calls'][0]
 
@@ -53,7 +57,6 @@ export type ContentDelta = ContentFirstDelta | ContentExtraDelta
 // Any delta
 export type Delta = ContentDelta | ToolCallDelta
 
-
 // CONTENT PARTS
 // -----------------------------------------------------------------------------
 
@@ -70,7 +73,6 @@ export type ImageContentPart = {
     }
 }
 export type ContentPart = TextContentPart | ImageContentPart
-
 
 // MESSAGES
 // -----------------------------------------------------------------------------

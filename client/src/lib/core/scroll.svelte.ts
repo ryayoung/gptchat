@@ -1,5 +1,5 @@
-import { tick } from 'svelte';
-import * as util from '../util';
+import { tick } from 'svelte'
+import * as util from '../util'
 
 export class AutoScroller {
     containerDiv = $state<HTMLDivElement | null>(null)
@@ -10,31 +10,31 @@ export class AutoScroller {
     autoScrollThrottled = util.throttleIgnore(() => this.autoScroll(), 200)
 
     scroll(how: 'auto' | 'force') {
-        how === 'force' ? this.forceScroll() : this.autoScrollThrottled();
+        how === 'force' ? this.forceScroll() : this.autoScrollThrottled()
     }
 
     handleUserScroll() {
-        if (!this.containerDiv) return;
-        const { scrollHeight, scrollTop, clientHeight } = this.containerDiv;
+        if (!this.containerDiv) return
+        const { scrollHeight, scrollTop, clientHeight } = this.containerDiv
 
         if (scrollTop < this.lastScrollTop) {
-            this.autoEnabled = false;
+            this.autoEnabled = false
         } else if (scrollHeight - scrollTop <= clientHeight + 50) {
-            this.autoEnabled = true;
+            this.autoEnabled = true
         }
-        this.lastScrollTop = scrollTop;
+        this.lastScrollTop = scrollTop
     }
 
     private scrollChat(onlyIfScrollChanged: boolean = false) {
         if (!this.containerDiv) {
-            return;
+            return
         }
-        const { scrollHeight } = this.containerDiv;
+        const { scrollHeight } = this.containerDiv
         if (onlyIfScrollChanged && scrollHeight === this.lastScrollHeight) {
-            return;
+            return
         }
         this.containerDiv.scrollTo({ top: scrollHeight, behavior: 'smooth' })
-        this.lastScrollHeight = scrollHeight;
+        this.lastScrollHeight = scrollHeight
     }
 
     private autoScroll() {
@@ -45,8 +45,8 @@ export class AutoScroller {
 
     private forceScroll() {
         tick().then(() => this.scrollChat())
-        this.autoEnabled = true;
+        this.autoEnabled = true
     }
 }
 
-export default AutoScroller;
+export default AutoScroller
