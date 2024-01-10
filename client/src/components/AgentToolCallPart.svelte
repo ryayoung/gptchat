@@ -7,14 +7,14 @@ import CodiconLoading from './icon/CodiconLoading.svelte';
 import PlotlyChart from './PlotlyChart.svelte';
 
 let { progressMode, header, args, argsTitle, result, resultTitle, resultType, generating } = $props<{
-    progressMode: string;
-    header: string | null;
-    args: string;
-    argsTitle: string;
-    result: string | null;
-    resultTitle: string;
-    resultType: FunctionResultType;
-    generating: boolean;
+    progressMode: string
+    header: string | null
+    args: string
+    argsTitle: string
+    result: string | null
+    resultTitle: string
+    resultType: FunctionResultType
+    generating: boolean
 }>();
 
 let open: boolean = $state(generating ? true : true);

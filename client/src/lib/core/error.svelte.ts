@@ -36,29 +36,6 @@ export function createErrorStore() {
     }
 
     return { items, showType, remove, add }
-
-    // const obj: ErrorStore = {
-    //     ...util.writable([]),
-    //
-    //     showType(type) {
-    //         return errorsToShow[type];
-    //     },
-    //
-    //     remove(text) {
-    //         this.update(errs => errs.filter(e => e.text !== text));
-    //     },
-    //
-    //     add(type, text) {
-    //         if (!this.get().some(e => e.text === text)) {
-    //             console.error(`${type} Error: ${text}`);
-    //             this.update(errs => {
-    //                 errs.push({ type, text });
-    //                 return errs;
-    //             })
-    //         }
-    //     }
-    // }
-    // return obj;
 }
 
 export default createErrorStore;

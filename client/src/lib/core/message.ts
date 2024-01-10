@@ -15,6 +15,9 @@ export type UserMessage = {
     content: string | ContentPart[]
 }
 
+export type SystemMessage = oai.SystemMessage & {
+    id: string
+}
 export type AssistantMessage = oai.AssistantMessage & {
     id: string
 }
@@ -23,10 +26,11 @@ export type ToolMessage = oai.ToolMessage & {
     id: string
 }
 
-export type Message = UserMessage | AssistantMessage | ToolMessage
+export type Message = SystemMessage | UserMessage | AssistantMessage | ToolMessage
 
 
 type RoleMessageTypeMap = {
+    system: SystemMessage
     user: UserMessage
     assistant: AssistantMessage
     tool: ToolMessage
@@ -44,6 +48,14 @@ type MessageFromOpenaiConverters = {
 }
 
 export const messageFromOpenai: MessageFromOpenaiConverters = {
+
+    system(msg) {
+        return {
+            role: 'system',
+            id: 'id' in msg && msg.id ? msg.id : util.newId(),
+            content: msg.content ?? '',
+        }
+    },
 
     user(msg) {
         return {
@@ -123,6 +135,14 @@ type MessageToOpenaiConverters = {
 
 export const messageToOpenai: MessageToOpenaiConverters = {
 
+    system(msg) {
+        let res: oai.SystemMessage = {
+            role: 'system',
+            content: msg.content,
+        } 
+        return res;
+    },
+
     user(msg) {
         let res: oai.UserMessage = { role: 'user', content: '' }
 
@@ -131,7 +151,11 @@ export const messageToOpenai: MessageToOpenaiConverters = {
         } else {
             res.content = [];
             for (const part of msg.content) {
-                part.type !== 'binary' && res.content.push(part);
+                if (part.type === 'binary') {
+                    res.content.push(part as unknown as oai.ContentPart)
+                } else {
+                    res.content.push(part);
+                }
             }
         }
         return res;

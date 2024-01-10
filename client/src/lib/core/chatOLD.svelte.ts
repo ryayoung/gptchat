@@ -14,6 +14,8 @@ import { AutoScroller } from './scroll.svelte'
 import { updateMessageFromDelta, newMessageFromDelta } from './delta'
 import { messageMappingOrderFromOpenai, convertMessageFromOpenai, messagesToOpenai } from './message'
 
+const domParser = new DOMParser()
+
 const SERVER_CHANNELS = ['connect', 'start-generating', 'stop-generating'] as const
 export type ServerChannel = (typeof SERVER_CHANNELS)[number]
 
@@ -40,32 +42,24 @@ export type SerializedChat = {
 
 export type FunctionCallStatus = 'progress' | 'complete' | 'error'
 
-
 type RenderedUserMessage = {
 	id: string
 	type: 'user'
-    contentText: string
-    contentImages: oai.ImageContentPart[]
-    contentBinaries: BinaryContentPart[]
-    onsubmit: (text: string) => void
+	content: string | ContentPart[]
 }
 
 export type RenderedAgentPartContent = {
+	id?: undefined
 	type: 'content'
-    id?: undefined
-	markdownContent: string
+	content: string
 }
 
 export type RenderedAgentPartToolCall = {
 	type: 'tool_call'
 	id: string
-    progressMode: FunctionCallStatus
-    header: string | null
-    args: string
-    argsTitle: string
-    result: string | null
-    resultTitle: string
-    resultType: FunctionResultType
+	name: string
+	arguments: string
+	result: string | null
 }
 
 export type RenderedAgentPart = RenderedAgentPartContent | RenderedAgentPartToolCall
@@ -77,10 +71,9 @@ export type RenderedAgentMessage = {
 
 export type RenderedMessage = RenderedUserMessage | RenderedAgentMessage
 
-
 export class Chat {
 	public scroll = new AutoScroller()
-    public rendered = util.writable<RenderedMessage[]>([])
+	public rendered = util.writable<RenderedMessage[]>([])
 	public msgMapping = util.writable<RecordOf<Message>>({})
 	public msgOrder: string[] = []
     public streamCursorSpan = document.createElement('span')
@@ -118,10 +111,15 @@ export class Chat {
 			if (this.msgOrder.length === 0 && store.default_messages?.length > 0) {
 				this.handleSetAllEvent(store.default_messages)
 				this.scroll.scroll('force')
-			}
+			} else {
+                this.rendered.set(renderMessages(this.msgMapping.get(), this.msgOrder, this.generating))
+            }
 		})
 
-		this.msgMapping.subscribe(() => this.scroll.scroll('auto'))
+		this.msgMapping.subscribe((store) => {
+			this.rendered.set(renderMessages(store, this.msgOrder, this.generating))
+			this.scroll.scroll('auto')
+		})
 
         $effect(() => log(this.connected ? 'connected' : 'disconnected'))
 
@@ -134,8 +132,6 @@ export class Chat {
         })
         this.config.subscribe(() => this.saveStateDebounced())
         this.msgMapping.subscribe(() => this.saveStateDebounced())
-
-        // RENDER
 
         const existingChat = util.localStorageGet<SerializedChat>(this.id)
         if (existingChat) {
@@ -310,6 +306,7 @@ export class Chat {
 		this.socket.emit('start-generating', { messages: this.oaiMessages() })
 		this.generating = true
 		this.scroll.scroll('force')
+		this.rendered.set(renderMessages(this.msgMapping.get(), this.msgOrder, true))
 	}
 
 	// MESSAGES
@@ -436,124 +433,78 @@ export class Chat {
 			return store
 		})
 	}
+}
 
-    renderMessages(
-        mapping = this.msgMapping.get(), 
-        functions = this.config.get().functions,
-        generating = this.generating,
-    ): RenderedMessage[] {
 
-        const order = this.msgOrder
-        let messages: Message[] = order.map((id) => mapping[id])
-        let msg: Message | undefined
+function renderMessages(
+    mapping: RecordOf<Message>, 
+    order: string[], 
+    generating: boolean = false,
+): RenderedMessage[] {
+	let messages: Message[] = order.map((id) => mapping[id])
+	let msg: Message | undefined
 
-        let rendering: RenderedMessage[] = []
+	let rendering: RenderedMessage[] = []
 
-        while (messages.length > 0 && (msg = messages.shift())) {
-            if (msg.role === 'system') {
-                continue
-            }
-            if (msg.role === 'user') {
-                const id = msg.id
-                const newMsg: RenderedUserMessage = {
-                    id: id,
-                    type: 'user',
-                    contentText: '',
-                    contentImages: [],
-                    contentBinaries: [],
-                    onsubmit: (text: string) => this.changeUserMessageAndSubmit(id, text),
-                }
-                if (typeof msg.content === 'string') {
-                    newMsg.contentText = msg.content
-                } else {
-                    newMsg.contentText = this.userContentToText(msg.content)
-                    newMsg.contentImages = msg.content.filter((part): part is oai.ImageContentPart => part.type === 'image_url')
-                    newMsg.contentBinaries = msg.content.filter((part): part is BinaryContentPart => part.type !== 'text')
-                }
-                rendering.push(newMsg)
-                continue
-            }
-
-            const agent: RenderedAgentMessage = {
-                type: 'agent',
-                parts: [],
-            }
-
-            messages.unshift(msg)
-
-            while (messages[0] && messages[0].role !== 'user') {
-                const agentMsg = messages.shift() as AssistantMessage | ToolMessage
-                const role = agentMsg.role
-                const content = agentMsg.content ?? ''
-
-                if (role !== 'assistant') {
-                    continue
-                }
-                if (content) {
-                    agent.parts.push({
-                        type: 'content',
-                        markdownContent: this.renderAssistantMarkdown(content),  // Add stream cursor later
-                    })
-                }
-                const { tool_calls } = agentMsg
-                if (tool_calls && tool_calls.length > 0) {
-                    for (let { id, function: func } of tool_calls) {
-                        
-                        const name = func.name ?? ''
-                        const args = func.arguments ?? ''
-                        let result: string | null = null
-
-                        for (const futureMsg of messages) {
-                            if (futureMsg.role === 'tool' && futureMsg.tool_call_id === id) {
-                                result = futureMsg.content
-                                break
-                            }
-                        }
-
-                        const config = functions[name]
-
-                        const header = config?.header?.show === false
-                            ? null
-                            : util.toMarkdown(config?.header?.text ?? `Function call to **\`${name}\`**`)
-
-                        agent.parts.push({
-                            type: 'tool_call', 
-                            id, 
-                            header: header,
-                            progressMode: this.getFunctionCallStatus(result, generating),
-                            args: this.renderFunctionCallArgs(args, name, functions),  // add stream cursor later
-                            argsTitle: util.toMarkdown(config?.arguments?.title ?? 'Arguments'),
-                            result: this.renderFunctionResult(result, name, functions),
-                            resultTitle: util.toMarkdown(config?.result?.title ?? 'Result'),
-                            resultType: config?.result?.type ?? 'text',
-                        })
-                    }
-                }
-            }
-
-            rendering.push(agent)
+	while (messages.length > 0 && (msg = messages.shift())) {
+        if (msg.role === 'system') {
+            continue
         }
+		if (msg.role === 'user') {
+			rendering.push({ id: msg.id, type: 'user', content: msg.content })
+			continue
+		}
 
-        if (!generating) {
-            return rendering
-        }
+		const agent: RenderedAgentMessage = {
+			type: 'agent',
+			parts: [],
+		}
 
-        const lastResponse = rendering[rendering.length - 1]
-        if (lastResponse?.type === 'user') {
-            rendering.push({
-                type: 'agent',
-                parts: [{ type: 'content', markdownContent: '<span class="stream-cursor-span"/>' }],
-            })
-            return rendering
-        }
+		messages.unshift(msg)
 
-        const lastPart = lastResponse?.parts[lastResponse.parts.length - 1]
-        if (lastPart?.type === 'content') {
-            lastPart.markdownContent = this.addStreamCursor(lastPart.markdownContent)
-        } else if (lastPart?.type === 'tool_call') {
-            lastPart.args = this.addStreamCursor(lastPart.args)
-        }
+		while (messages[0] && messages[0].role !== 'user') {
+			const agentMsg = messages.shift() as AssistantMessage | ToolMessage
+			const role = agentMsg.role
+			const content = agentMsg.content ?? ''
 
-        return rendering
-    }
+			if (role === 'assistant') {
+				agent.parts.push({
+					type: 'content',
+					content: content,
+				})
+				const { tool_calls } = agentMsg
+				if (tool_calls && tool_calls.length > 0) {
+					for (let {
+						id,
+						function: { name, arguments: args },
+					} of tool_calls) {
+						name = name ?? ''
+						args = args ?? ''
+						agent.parts.push({ type: 'tool_call', id, name, arguments: args, result: null })
+					}
+				}
+				continue
+			}
+
+			const id = agentMsg.tool_call_id
+			for (let i = agent.parts.length - 1; i >= 0; i--) {
+				let part = agent.parts[i]
+				if (part.type === 'tool_call' && part.id === id) {
+					part.result = agentMsg.content
+					break
+				}
+			}
+		}
+
+		rendering.push(agent)
+	}
+
+	if (generating && rendering[rendering.length - 1]?.type === 'user') {
+		rendering.push({
+			type: 'agent',
+			parts: [{ type: 'content', content: '' }],
+		})
+	}
+
+	return rendering
 }

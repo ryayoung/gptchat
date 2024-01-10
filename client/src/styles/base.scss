@@ -113,9 +113,10 @@ html,
 	-webkit-text-size-adjust: 100%; /* 2 */
 	-moz-tab-size: 4; /* 3 */
 	tab-size: 4; /* 3 */
-	font-family: -apple-system, BlinkMacSystemFont, Roboto, ui-sans-serif, system-ui, Segoe UI, Ubuntu,
+	--default-font-family: -apple-system, BlinkMacSystemFont, Roboto, ui-sans-serif, system-ui, Segoe UI, Ubuntu,
 		Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji,
 		Segoe UI Symbol, Noto Color Emoji;
+    font-family: var(--default-font-family);
 	-webkit-tap-highlight-color: transparent; /* 4 */
     -webkit-font-smoothing: antialiased;
     -webkit-font-feature-settings: normal;

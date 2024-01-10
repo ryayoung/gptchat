@@ -1,6 +1,5 @@
 <script lang="ts">
 const plotlyUrl = 'https://cdn.plot.ly/plotly-2.27.0.min.js';
-const darkMode = true;
 
 let { chart_json } = $props<{
     chart_json: string

@@ -130,7 +130,10 @@ def handle_start_generating(func):
         "Your send message handler should accept just one parameter: `messages`"
     )
     @socketio.on("start-generating")
-    def wrapper(arguments: dict):
+    def wrapper(arguments: dict | list):
+        if isinstance(arguments, list):
+            arguments = {"messages": arguments}
+
         generating_started()
         try:
             result = func(**arguments)
@@ -222,11 +225,11 @@ def update_message(
 
 
 class Config(TypedDict, total=False):
-    messages: list[dict]
+    default_messages: list[dict]
     functions: dict
 
 
-config: Config | dict = {}
+config: Config | dict[Any, Any] = {}
 
 
 @handle_connect
