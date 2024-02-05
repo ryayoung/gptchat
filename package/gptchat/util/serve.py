@@ -6,9 +6,10 @@ from zlib import adler32
 from typing import cast
 from flask import Response
 from dataclasses import dataclass
+from pathlib import Path
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class StaticResponse:
     data: bytes
     mimetype: str
@@ -29,8 +30,9 @@ class StaticResponse:
         return cast(Response, rv)
 
 
-def make_static_response(full_path: str, data: bytes, cache_max_age: int | None = None) -> StaticResponse:
-    stat = os.stat(full_path)
+def make_static_response(full_os_path: str, data: bytes, cache_max_age: int | None = None) -> StaticResponse:
+    stat = os.stat(full_os_path)
+    full_path = Path(full_os_path).as_posix()
     size = stat.st_size
     mtime = stat.st_mtime
     headers = {}
@@ -77,8 +79,9 @@ def get_static_responses_from_dir(static_folder: str, max_age: int) -> dict[str,
         with open(full_path, 'rb') as f:
             data = f.read()
 
-        cache_max_age = None if "index.html" in fname else max_age
+        cache_max_age = None if "index.html" in fname or fname.endswith("svg") else max_age
 
+        fname = Path(fname).as_posix()
         res[fname] = make_static_response(full_path, data, cache_max_age)
 
     return res
