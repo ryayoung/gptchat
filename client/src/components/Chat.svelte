@@ -37,9 +37,16 @@ $effect.pre(() => {
                     <PencilNewIcon />
                 </button>
             </div>
-            {#if !chat.connected}
-                <CodiconLoading style="width: 1.5rem; height: 1.5rem;" />
-            {/if}
+            <div class="flex items-center gap.75">
+                {#if !chat.connected}
+                    <CodiconLoading style="width: 1.5rem; height: 1.5rem;" />
+                {/if}
+                {#if $config.logo_small}
+                    <div class="logo-small">
+                        {@html $config.logo_small}
+                    </div>
+                {/if}
+            </div>
         </div>
         {#each $rendered as response, index}
             <ResponseWrapper type={response.type} {agentName}>
@@ -73,6 +80,8 @@ $effect.pre(() => {
     <Prompt
         text={prompt.text}
         generating={chat.generating}
+        allowUpload={$config.prompt?.allow_upload}
+        placeholder={$config.prompt?.placeholder}
         onchange={(text) => (prompt.text = text)}
         onupload={() => chat.upload()}
         onsubmit={() => chat.sendMessage()}
@@ -133,6 +142,15 @@ button.new {
         background-color: color($surface-primary);
         height: 3.5rem;
         margin-bottom: 0.375rem;
+    }
+
+    .logo-small {
+        @include square(2rem);
+
+        :global(> svg) {
+            width: 100%;
+            height: 100%;
+        }
     }
 }
 

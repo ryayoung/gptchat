@@ -68,10 +68,10 @@ def start_generating(messages):
 
 ### `config`
 
-Configurations can be set with the `config` global.
+Configurations can be set with `set_config()`.
 
 ```py
-app.config = {
+app.set_config({
     "functions": {
         "get_stock_price": {
             "header": {
@@ -85,15 +85,22 @@ app.config = {
     "default_messages": [
         {"role": "system", "content": "You are a helpful AI assistant"},
     ]
-}
+})
 ```
 
-#### Available config options
-- Using typescript here, to better represent the type of your dictionary.
-(The `?` means optional, and `[key: string]` means any keys of your choice, like function names)
+#### Config Options
 
 ```ts
 type Config = {
+  favicon?: string  // Path to an SVG icon to display in browser tab, bookmarks, etc.
+  title?: string  // Site title to display in browser tab, bookmarks, etc.
+  logo_small?: string  // Path to an SVG icon to display in top right corner
+  agent_name?: string  // Custom display name for the agent. Default 'Assistant'
+  default_messages?: Array<OpenAIMessage>  // Messages to start each new conversation with
+  prompt?: {
+    allow_upload?: boolean  // Allow the user to upload images and files. Default true
+    placeholder?: string  // Placeholder text. Default 'Send a message...'
+  }
   functions: {
     [key: string]: {
       header?: {
@@ -115,7 +122,6 @@ type Config = {
       }
     }
   },
-  default_messages: Array<OpenAIMessage>  // Set messages to appear at the beginning of each new conversation
 }
 ```
 

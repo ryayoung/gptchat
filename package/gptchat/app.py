@@ -1,4 +1,5 @@
 import os
+import re
 import inspect
 from uuid import uuid4
 from flask import Flask, request, abort
@@ -8,6 +9,7 @@ from gptchat.util.openai_util import iter_stream_choices, concat_stream
 from gptchat.util.serve import (
     get_static_responses_from_dir,
     get_filename_target,
+    make_static_response,
 )
 
 ServerChannel = Literal[
@@ -194,8 +196,8 @@ def set_message(
     return socket_emit("message-set", message, **kwargs)
 
 
-def stream_updates(stream: Stream[ChatCompletionChunk], delay: float = 0.0) -> Choice:
-    id = new_id()
+def stream_updates(stream: Stream[ChatCompletionChunk], delay: float = 0.0, id: str | None = None) -> Choice:
+    id = id or new_id()
     choices = []
 
     for choice in iter_stream_choices(stream):
@@ -224,19 +226,69 @@ def update_message(
     return socket_emit("message-update", delta, **kwargs)
 
 
-class Config(TypedDict, total=False):
+class UIConfigPrompt(TypedDict, total=False):
+    allow_upload: bool
+    placeholder: str
+
+
+class UIConfig(TypedDict, total=False):
     default_messages: list[dict]
     functions: dict
+    agent_name: str
+    prompt: UIConfigPrompt
+    logo_small: str
 
 
-config: Config | dict[Any, Any] = {}
+class Config(UIConfig, total=False):
+    favicon: str
+
+
+ui_config: UIConfig = {}
+
+
+def set_config(config: Config):
+    global ui_config
+    ui_config = {}
+    if 'default_messages' in config:
+        ui_config['default_messages'] = config['default_messages']
+    if 'functions' in config:
+        ui_config['functions'] = config['functions']
+    if 'agent_name' in config:
+        ui_config['agent_name'] = config['agent_name']
+    if 'prompt' in config:
+        ui_config['prompt'] = config['prompt']
+
+    if 'logo_small' in config:
+        logo_path = config['logo_small']
+        assert os.path.exists(logo_path), f"File not found: {logo_path}"
+        assert logo_path.endswith("svg"), f"Currently only SVG logos are supported"
+        with open(logo_path, "r") as f:
+            logo = f.read()
+        ui_config['logo_small'] = logo
+
+    if 'title' in config:
+        index_static_response = static_file_responses['index.html']
+        index_html = index_static_response.data.decode()
+        index_html = re.sub(r"<title>.*</title>", f"<title>{config['title']}</title>", index_html, flags=re.DOTALL)
+        index_static_response.data = index_html.encode()
+        index_static_response.size = len(index_html)
+
+    if 'favicon' in config:
+        favicon_path = config['favicon']
+        assert os.path.exists(favicon_path), f"File not found: {favicon_path}"
+        with open(favicon_path, 'rb') as f:
+            data = f.read()
+
+        static_file_responses['favicon.svg'] = make_static_response(favicon_path, data, None)
 
 
 @handle_connect
 def connect():
-    socket_emit("config", config)
+    socket_emit("config", ui_config)
 
 
 def run_app(port: int = 5000, **kwargs):
+    if 'config' in globals():
+        print("Setting `app.config = {...}` is deprecated. Use `app.set_config({...})` instead.")
     kwargs["port"] = port
     socketio.run(app, **kwargs)

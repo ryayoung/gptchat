@@ -3,9 +3,11 @@ import TextArea from './TextArea.svelte'
 import SendIcon from './icon/Send.svelte'
 import FileUploadIcon from './icon/FileUpload.svelte'
 
-let { text, generating, onchange, onsubmit, onupload, onstop, children } = $props<{
+let { text, generating, allowUpload, placeholder, onchange, onsubmit, onupload, onstop, children } = $props<{
     text: string
     generating: boolean
+    allowUpload: boolean
+    placeholder: string
     onchange: (value: string) => void
     onsubmit: () => void
     onupload: () => void
@@ -27,13 +29,15 @@ let textArea: TextArea
             value={text}
             {onchange}
             {onsubmit}
-            placeholder="Send a message..."
+            {placeholder}
             maxHeight={200}
-            style="height: 3.25rem; padding: .875rem 3rem .875rem 3rem;"
+            style="height: 3.25rem; padding: .875rem 3rem .875rem {allowUpload ? '3rem' : '.875rem'};"
         />
-        <button class="upload-btn bottom-left" type="button" onclick={onupload}>
-            <FileUploadIcon />
-        </button>
+        {#if allowUpload}
+            <button class="upload-btn bottom-left" type="button" onclick={onupload}>
+                <FileUploadIcon />
+            </button>
+        {/if}
         {#if generating}
             <button class="stop-btn bottom-right rounded" type="button" onclick={onstop}>
                 <div class="square" />
