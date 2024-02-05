@@ -42,28 +42,20 @@ type PartialMessageForRole<T extends keyof oai.RoleMessageTypeMap> = Partial<
 
 type MessageFromOpenaiConverters = {
     [K in keyof oai.RoleMessageTypeMap]: (
-        msg: Partial<oai.RoleMessageTypeMap[K] | RoleMessageTypeMap[K]>
+        msg: Partial<oai.RoleMessageTypeMap[K] | RoleMessageTypeMap[K]>, role: K, id: string
     ) => RoleMessageTypeMap[K] | null
 }
 
 export const messageFromOpenai: MessageFromOpenaiConverters = {
-    system(msg) {
-        return {
-            role: 'system',
-            id: 'id' in msg && msg.id ? msg.id : util.newId(),
-            content: msg.content ?? '',
-        }
+    system(msg, role, id) {
+        return { role, id, content: msg.content ?? '' }
     },
 
-    user(msg) {
-        return {
-            role: 'user',
-            id: 'id' in msg && msg.id ? msg.id : util.newId(),
-            content: !!msg.content ? msg.content : '',
-        }
+    user(msg, role, id) {
+        return { role, id, content: msg.content ?? '' }
     },
 
-    assistant(msg) {
+    assistant(msg, role, id) {
         const tool_calls: oai.ToolCall[] | undefined =
             msg.tool_calls && msg.tool_calls.length > 0 ? msg.tool_calls : undefined
 
@@ -75,24 +67,13 @@ export const messageFromOpenai: MessageFromOpenaiConverters = {
                 }
             }
         }
-        return {
-            role: 'assistant',
-            id: 'id' in msg && msg.id ? msg.id : util.newId(),
-            content: msg.content ?? '',
-            tool_calls,
-        }
+        return { role, id, content: msg.content ?? '', tool_calls }
     },
 
-    tool(msg) {
-        if (!msg.tool_call_id) {
-            return null
-        }
-        return {
-            role: 'tool',
-            id: 'id' in msg && msg.id ? msg.id : util.newId(),
-            content: msg.content ?? '',
-            tool_call_id: msg.tool_call_id,
-        }
+    tool(msg, role, id) {
+        return msg.tool_call_id
+            ? { role, id, content: msg.content ?? '', tool_call_id: msg.tool_call_id }
+            : null
     },
 }
 
@@ -100,7 +81,7 @@ export function convertMessageFromOpenai<T extends keyof oai.RoleMessageTypeMap>
     msg: PartialMessageForRole<T>
 ): RoleMessageTypeMap[T] | null {
     if (msg.role && msg.role in messageFromOpenai) {
-        return messageFromOpenai[msg.role as T](msg)
+        return messageFromOpenai[msg.role as T](msg, msg.role as T, 'id' in msg && msg.id ? msg.id : util.newId())
     }
     return null
 }
@@ -129,58 +110,43 @@ export function messageMappingOrderFromOpenai(partialMessages: PartialMessageAny
 // -----------------------------------------------------------------------------
 
 type MessageToOpenaiConverters = {
-    [K in keyof RoleMessageTypeMap]: (msg: RoleMessageTypeMap[K]) => oai.RoleMessageTypeMap[K]
+    [K in keyof RoleMessageTypeMap]: (msg: RoleMessageTypeMap[K], role: K) => oai.RoleMessageTypeMap[K]
 }
 
 export const messageToOpenai: MessageToOpenaiConverters = {
-    system(msg) {
-        let res: oai.SystemMessage = {
-            role: 'system',
+    system(msg, role) {
+        return { role, content: msg.content }
+    },
+
+    user(msg, role) {
+        return {
+            role,
+            content: typeof msg.content === 'string'
+                ? msg.content
+                : msg.content.map(part => part.type === 'binary' ? part as unknown as oai.ContentPart : part)
+        }
+    },
+
+    assistant(msg, role) {
+        return {
+            role,
             content: msg.content,
+            tool_calls: msg.tool_calls && msg.tool_calls.length > 0 ? msg.tool_calls : undefined,
         }
-        return res
     },
 
-    user(msg) {
-        let res: oai.UserMessage = { role: 'user', content: '' }
-
-        if (typeof msg.content === 'string') {
-            res.content = msg.content
-        } else {
-            res.content = []
-            for (const part of msg.content) {
-                if (part.type === 'binary') {
-                    res.content.push(part as unknown as oai.ContentPart)
-                } else {
-                    res.content.push(part)
-                }
-            }
-        }
-        return res
-    },
-
-    assistant(msg) {
-        let res: oai.AssistantMessage = { role: 'assistant', content: msg.content }
-
-        if (msg.tool_calls && msg.tool_calls.length > 0) {
-            res.tool_calls = msg.tool_calls
-        }
-        return res
-    },
-
-    tool(msg) {
-        let res: oai.ToolMessage = {
-            role: 'tool',
+    tool(msg, role) {
+        return {
+            role,
             content: msg.content,
             tool_call_id: msg.tool_call_id,
         }
-        return res
     },
 }
 function convertMessageToOpenai<T extends keyof RoleMessageTypeMap>(
     msg: RoleMessageTypeMap[T]
 ): oai.RoleMessageTypeMap[T] {
-    return messageToOpenai[msg.role as T](msg)
+    return messageToOpenai[msg.role as T](msg, msg.role as T)
 }
 
 export function messagesToOpenai(mapping: RecordOf<Message>, order: string[]): oai.Message[] {

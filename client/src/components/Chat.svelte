@@ -60,13 +60,7 @@ $effect.pre(() => {
                                 </div>
                             {:else}
                                 <AgentToolCallPart
-                                    progressMode={part.progressMode}
-                                    header={part.header}
-                                    args={part.args}
-                                    argsTitle={part.argsTitle}
-                                    result={part.result}
-                                    resultTitle={part.resultTitle}
-                                    resultType={part.resultType}
+                                    {...part}
                                     generating={chat.generating}
                                 />
                             {/if}

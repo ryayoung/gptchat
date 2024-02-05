@@ -7,25 +7,16 @@ export class Socket<ClientChannel extends string, ServerChannel extends string> 
         this.instance = io(...args)
     }
 
-    on(eventName: ClientChannel, listener: (...args: any[]) => void) {
-        this.instance.on(eventName, listener as any)
+    on = (eventName: ClientChannel | 'connect' | 'disconnect', listener: (...args: any[]) => void) => {
+        this.instance.on(eventName, listener)
     }
 
-    emit(eventName: ServerChannel, ...args: any[]) {
-        if (typeof args[args.length - 1] === 'function') {
-            const ack = args.pop() as (...args: any[]) => void
-            this.instance.emit(eventName, ...args, ack)
-        } else {
-            this.instance.emit(eventName, ...args)
-        }
+    emit = (eventName: ServerChannel, ...args: any[]) => {
+        this.instance.emit(eventName, ...args)
     }
 
-    off(eventName: ClientChannel, listener?: (...args: any[]) => void) {
-        if (listener) {
-            this.instance.off(eventName, listener as any)
-        } else {
-            this.instance.off(eventName)
-        }
+    off = (eventName: ClientChannel | 'connect' | 'disconnect', listener?: (...args: any[]) => void) => {
+        this.instance.off(eventName, listener)
     }
 }
 

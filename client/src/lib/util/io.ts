@@ -67,3 +67,21 @@ export function localStorageSet(key: string, value: any) {
         console.error(e)
     }
 }
+
+
+export function sessionStorageGet<T>(key: string): T | null {
+    try {
+        const item = sessionStorage.getItem(key)
+        return JSON.parse(item as string)
+    } catch (e) {
+        return null
+    }
+}
+
+export function sessionStorageSet(key: string, value: any) {
+    try {
+        sessionStorage.setItem(key, JSON.stringify(value))
+    } catch (e) {
+        console.error(e)
+    }
+}

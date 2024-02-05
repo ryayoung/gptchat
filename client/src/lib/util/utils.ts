@@ -21,16 +21,16 @@ export function isPythonErrorString(s: string): boolean {
     return pythonErrorRegex.test(s) || pythonTracebackRegex.test(s)
 }
 
-export function elemIsScrollledToBottom(elem: HTMLElement): boolean {
-    return elem.scrollHeight - elem.scrollTop <= elem.clientHeight
-}
+// export function elemIsScrollledToBottom(elem: HTMLElement): boolean {
+//     return elem.scrollHeight - elem.scrollTop <= elem.clientHeight
+// }
 
-export function appendOrReturnString(existing: string | null | undefined, toAppend: string): string {
-    if (existing) {
-        return existing + toAppend
-    }
-    return toAppend
-}
+// export function appendOrReturnString(existing: string | null | undefined, toAppend: string): string {
+//     if (existing) {
+//         return existing + toAppend
+//     }
+//     return toAppend
+// }
 
 /** The keys of T that are not undefined. */
 type NonUndefinedKeys<T> = {
