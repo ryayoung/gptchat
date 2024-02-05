@@ -33,5 +33,6 @@ export default defineConfig({
     build: {
         outDir: '../package/static',
         emptyOutDir: true,
+        cssCodeSplit: false,
     }
 });
