@@ -115,11 +115,11 @@ export class Chat {
         this.config.subscribe((store) => {
             if (this.msgOrder.length === 0 && store.default_messages?.length > 0) {
                 this.handleSetAllEvent(store.default_messages)
-                this.scroll.scroll('force')
+                this.scroll.forceScroll()
             }
         })
 
-        this.msgMapping.subscribe(() => this.scroll.scroll('auto'))
+        this.msgMapping.subscribe(() => this.scroll.autoScroll())
 
         $effect(() => log(this.connected ? 'connected' : 'disconnected'))
 
@@ -306,7 +306,7 @@ export class Chat {
     private startGenerating() {
         this.socket.emit('start-generating', { messages: this.oaiMessages() })
         this.generating = true
-        this.scroll.scroll('force')
+        this.scroll.forceScroll()
     }
 
     // MESSAGES
@@ -373,7 +373,7 @@ export class Chat {
     handleSetAllEvent(messages: PartialMessageAnyRole[]): void {
         const { mapping, order } = messageMappingOrderFromOpenai(messages)
         this.setAllMessages(mapping, order)
-        this.scroll.scroll('force')
+        this.scroll.forceScroll()
     }
 
     handleSetEvent(message: PartialMessageAnyRole) {

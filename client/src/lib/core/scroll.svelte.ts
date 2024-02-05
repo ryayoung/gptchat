@@ -2,50 +2,59 @@ import { tick } from 'svelte'
 import * as util from '../util'
 
 export class AutoScroller {
-    containerDiv = $state<HTMLDivElement | null>(null)
-    autoEnabled = true
-    lastScrollHeight = 0
-    lastScrollTop = 0
-    handleUserScrollDebounced = util.debounce(() => this.handleUserScroll(), 100)
-    autoScrollThrottled = util.throttleIgnore(() => this.autoScroll(), 200)
+    private elem: HTMLDivElement | null = null
+    private autoScrollEnabled = true
+    private lastScrollHeight = 0
+    private lastScrollTop = 0
 
-    scroll(how: 'auto' | 'force') {
-        how === 'force' ? this.forceScroll() : this.autoScrollThrottled()
+    action = (node: HTMLElement) => {
+        this.elem = node as HTMLDivElement
+        const scrollHandler = util.debounce(() => this.handleUserScrollEvent(), 100)
+        this.elem.addEventListener('scroll', scrollHandler)
+        tick().then(() => this.forceScroll())
+
+        return {
+            destroy: () => {
+                this.elem?.removeEventListener('scroll', scrollHandler)
+            }
+        }
     }
 
-    handleUserScroll() {
-        if (!this.containerDiv) return
-        const { scrollHeight, scrollTop, clientHeight } = this.containerDiv
+    autoScroll = util.throttleIgnore(() => {
+        if (this.autoScrollEnabled) {
+            tick().then(() => {
+                if (!this.elem) return
+                const { scrollHeight } = this.elem
+                if (scrollHeight !== this.lastScrollHeight) {
+                    this.scrollTo(scrollHeight)
+                }
+            })
+        }
+    }, 200)
+
+    forceScroll = () => {
+        tick().then(() => {
+            if (!this.elem) return
+            this.scrollTo(this.elem.scrollHeight)
+            this.autoScrollEnabled = true
+        })
+    }
+
+    private scrollTo(top: number) {
+        this.elem?.scrollTo({ top, behavior: 'smooth' })
+        this.lastScrollHeight = top
+    }
+
+    private handleUserScrollEvent() {
+        if (!this.elem) return
+        const { scrollHeight, scrollTop, clientHeight } = this.elem
 
         if (scrollTop < this.lastScrollTop) {
-            this.autoEnabled = false
+            this.autoScrollEnabled = false
         } else if (scrollHeight - scrollTop <= clientHeight + 50) {
-            this.autoEnabled = true
+            this.autoScrollEnabled = true
         }
         this.lastScrollTop = scrollTop
-    }
-
-    private scrollChat(onlyIfScrollChanged: boolean = false) {
-        if (!this.containerDiv) {
-            return
-        }
-        const { scrollHeight } = this.containerDiv
-        if (onlyIfScrollChanged && scrollHeight === this.lastScrollHeight) {
-            return
-        }
-        this.containerDiv.scrollTo({ top: scrollHeight, behavior: 'smooth' })
-        this.lastScrollHeight = scrollHeight
-    }
-
-    private autoScroll() {
-        if (this.autoEnabled) {
-            tick().then(() => this.scrollChat(true))
-        }
-    }
-
-    private forceScroll() {
-        tick().then(() => this.scrollChat())
-        this.autoEnabled = true
     }
 }
 

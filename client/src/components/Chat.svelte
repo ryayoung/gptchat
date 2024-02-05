@@ -17,22 +17,19 @@ let { chat, totalWidth, totalHeight } = $props<{
     totalHeight: number
 }>()
 
-const { msgMapping, prompt, scroll, errors, rendered, config } = chat
+const { msgMapping, prompt, errors, rendered, config } = chat
 
 let agentName: string = $derived($config.agent_name ?? 'Assistant')
 
 $effect.pre(() => {
     rendered.set(chat.renderMessages($msgMapping, $config.functions, chat.generating))
 })
-
-setTimeout(() => scroll.scroll('force'))
 </script>
 
 <div class="container flex-col">
     <div
         class="chats flex-col relative full scroll-y"
-        bind:this={scroll.containerDiv}
-        onscroll={scroll.handleUserScrollDebounced}
+        use:chat.scroll.action
     >
         <div class="header flex justify-between items-center">
             <div class="flex items-center gap.5">
